@@ -75,3 +75,28 @@ jobs:
         run: |
           (cd _spread/cmd/spread && go build)
           _spread/cmd/spread/spread -v ${{ steps.spread-suites.outputs.run-tasks }}
+
+      - name: Upload manifests
+        if: ${{ steps.spread-suites.outputs.run-tasks }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifests_${{ matrix.runner.name }}
+          path: ~/manifests/**/*.wall
+          overwrite: true
+
+  consume-manifests:
+    needs: spread-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download manifests
+        uses: actions/download-artifact@v4
+        with:
+          name: manifests_X64
+      - name: List manifests
+        run: |
+          echo "$PWD"
+          pwd
+          ls -lha .
+          ls -lha manifests
+          sudo apt update && sudo apt install --yes tree
+          tree manifests || true
