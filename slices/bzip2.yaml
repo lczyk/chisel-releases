@@ -36,6 +36,7 @@ slices:
       /usr/bin/bzless:
       /usr/bin/bzmore:
 
+  # Copyright
   copyright:
     contents:
       /usr/share/doc/bzip2/copyright:
