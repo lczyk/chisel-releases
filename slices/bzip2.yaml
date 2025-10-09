@@ -15,6 +15,7 @@ slices:
       /usr/bin/bzip2: { symlink: /usr/bin/bunzip2 }
       /usr/bin/bzip2recover:
 
+  # Scripts
   scripts:
     essential:
       - base-files_bin
@@ -37,7 +38,6 @@ slices:
       /usr/bin/bzless:
       /usr/bin/bzmore:
 
-  # Copyright
   copyright:
     contents:
       /usr/share/doc/bzip2/copyright:
