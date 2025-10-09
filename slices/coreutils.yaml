@@ -4,6 +4,7 @@ essential:
   - coreutils_copyright
 
 slices:
+  # test
   libs:
     essential:
       - libc6_libs

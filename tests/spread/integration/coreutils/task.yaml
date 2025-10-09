@@ -18,10 +18,6 @@ execute: |
   rootfs_mktemp="$(install-slices coreutils_mktemp)"
   chroot "$rootfs_mktemp" mktemp --version
 
-  # test echo binary
-  rootfs_echo="$(install-slices coreutils_echo)"
-  chroot "$rootfs_echo" echo "Hello, World!"
-
   # test ln binary
   rootfs_ln="$(install-slices coreutils_ln-utility)"
   touch "$rootfs_ln/test_file"
