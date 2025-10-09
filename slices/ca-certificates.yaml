@@ -66,6 +66,7 @@ slices:
       #  also be included. For details, see the `update-ca-certificates` script.
       /usr/sbin/update-ca-certificates:
 
+  # Copyright slice
   copyright:
     contents:
       /usr/share/doc/ca-certificates/copyright:
