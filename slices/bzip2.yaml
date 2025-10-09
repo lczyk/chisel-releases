@@ -4,6 +4,7 @@ essential:
   - bzip2_copyright
 
 slices:
+  # Bins
   bins:
     essential:
       - libbz2-1.0_libs
@@ -14,7 +15,6 @@ slices:
       /usr/bin/bzip2: { symlink: /usr/bin/bunzip2 }
       /usr/bin/bzip2recover:
 
-  # Scripts
   scripts:
     essential:
       - base-files_bin
