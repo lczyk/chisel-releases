@@ -20,7 +20,10 @@ jobs:
   #  name: Lint
   #  uses: canonical/chisel-releases/.github/workflows/lint.yaml@main
 
+  # https://github.com/canonical/chisel-releases/issues/614
   integration-tests:
+    permissions:
+      pull-requests: write
     name: Integration tests
     uses: alesancor1/chisel-releases/.github/workflows/spread.yaml@main
 
