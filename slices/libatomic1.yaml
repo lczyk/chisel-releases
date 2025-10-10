@@ -6,4 +6,3 @@ slices:
       - libc6_libs
     contents:
       /usr/lib/*-linux-*/libatomic.so.1*:
-# hello

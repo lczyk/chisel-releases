@@ -15,4 +15,3 @@ slices:
   copyright:
     contents:
       /usr/share/doc/python3.12-venv: {symlink: /usr/share/doc/python3.12}
-# hello
