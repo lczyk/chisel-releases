@@ -59,4 +59,3 @@ slices:
       /var/lib/dpkg/info/:
       /var/lib/dpkg/parts/:
       /var/lib/dpkg/updates/:
-# hello
