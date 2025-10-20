@@ -47,28 +47,9 @@ jobs:
           ./${{ env.script-dir }}/pkg-deps \
             ${{ steps.changed-paths.outputs.slices_files }}
 
-      - name: Set PR number
-        id: pr-number
-        run: |
-          # In workflow_call context triggered by pull_request, use the PR number from github context
-          echo "result=${{ github.event.number }}" >> $GITHUB_OUTPUT
-
-      - name: Prepare PR comment data
-        if: always() && steps.check-deps.outputs.msg_file && steps.pr-number.outputs.result != ''
-        run: |
-          message=$(cat "${{ steps.check-deps.outputs.msg_file }}")
-          cat > pr-comment.json << 'EOF'
-          {
-            "pr-number": ${{ steps.pr-number.outputs.result }},
-            "message-id": "pkg-deps-check",
-            "message": $(echo "$message" | jq -Rs .)
-          }
-          EOF
-
       - name: Upload PR comment data
-        if: always() && steps.check-deps.outputs.msg_file && steps.pr-number.outputs.result != ''
-        uses: actions/upload-artifact@v4
+        if: always() && steps.check-deps.outputs.msg_file
+        uses: ./.github/actions/upload-pr-comment
         with:
-          name: pr-comment-data
-          path: pr-comment.json
-          retention-days: 1
+          message-file: ${{ steps.check-deps.outputs.msg_file }}
+          message-id: "pkg-deps-check"
