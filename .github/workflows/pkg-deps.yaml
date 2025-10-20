@@ -44,7 +44,7 @@ jobs:
           script-dir: "${{ env.main-branch-path }}/.github/scripts/pkg-deps"
         run: |
           set -ex
-          ./${{ env.script-dir }}/pkg-deps \
+          msg_file=/tmp/deps-message.txt ./${{ env.script-dir }}/pkg-deps \
             ${{ steps.changed-paths.outputs.slices_files }}
 
       - name: Upload message for PR comment

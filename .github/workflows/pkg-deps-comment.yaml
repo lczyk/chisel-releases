@@ -45,6 +45,7 @@ jobs:
         run: |
           if [ -f pr-comment.zip ]; then
             unzip pr-comment.zip
+            cat *.txt
             ls -la
           else
             echo "No artifact found, skipping comment"
