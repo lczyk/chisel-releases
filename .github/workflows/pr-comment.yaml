@@ -19,7 +19,7 @@ name: Post PR comment
 
 on:
   workflow_run:
-    workflows: ["Pkg coverage"]
+    workflows: ["Pkg coverage", "Test workflow"]
     types:
       - completed
 
