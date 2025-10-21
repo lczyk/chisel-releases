@@ -10,7 +10,7 @@
 #
 # To use this from another workflow:
 # 1. Create a JSON file with the above structure
-# 2. Upload it as an artifact named "pr-comment-data"
+# 2. Upload it as an artifact named "pr-comment-data" using actions/upload-artifact@v4
 # 3. Add your workflow name to the "workflows" list below
 
 name: Post PR comment
@@ -32,54 +32,30 @@ jobs:
       pull-requests: write
     steps:
       - name: Download PR comment artifact
-        uses: actions/github-script@v7
+        uses: actions/download-artifact@v5
         with:
-          script: |
-            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               run_id: context.payload.workflow_run.id,
-            });
-            let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
-              return artifact.name == "pr-comment-data"
-            })[0];
-            if (!matchArtifact) {
-              console.log('No pr-comment-data artifact found');
-              return;
-            }
-            let download = await github.rest.actions.downloadArtifact({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               artifact_id: matchArtifact.id,
-               archive_format: 'zip',
-            });
-            let fs = require('fs');
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/pr-comment-data.zip`, Buffer.from(download.data));
+          name: pr-comment-data
+          run-id: ${{ github.event.workflow_run.id }}
+        continue-on-error: true
 
-      - name: Extract and parse comment data
+      - name: Parse comment data
         id: comment-data
         run: |
-          if [ -f pr-comment-data.zip ]; then
-            unzip pr-comment-data.zip
-            if [ -f pr-comment.json ]; then
-              # Parse JSON and set outputs
-              pr_number=$(jq -r '.["pr-number"]' pr-comment.json)
-              message_id=$(jq -r '.["message-id"]' pr-comment.json)
-              message=$(jq -r '.message' pr-comment.json)
-              
-              echo "pr-number=$pr_number" >> $GITHUB_OUTPUT
-              echo "message-id=$message_id" >> $GITHUB_OUTPUT
-              
-              # Write message to file for mshick/add-pr-comment
-              echo "$message" > pr-comment-message.txt
-              
-              echo "Found comment data: PR #$pr_number, message-id: $message_id"
-            else
-              echo "No pr-comment.json found in artifact"
-              exit 0
-            fi
+          if [ -f pr-comment.json ]; then
+            # Parse JSON and set outputs
+            pr_number=$(jq -r '.["pr-number"]' pr-comment.json)
+            message_id=$(jq -r '.["message-id"]' pr-comment.json)
+            message=$(jq -r '.message' pr-comment.json)
+            
+            echo "pr-number=$pr_number" >> $GITHUB_OUTPUT
+            echo "message-id=$message_id" >> $GITHUB_OUTPUT
+            
+            # Write message to file for mshick/add-pr-comment
+            echo "$message" > pr-comment-message.txt
+            
+            echo "Found comment data: PR #$pr_number, message-id: $message_id"
           else
-            echo "No pr-comment-data.zip found, skipping comment"
+            echo "No pr-comment.json found, skipping comment"
             exit 0
           fi
 
