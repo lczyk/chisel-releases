@@ -9,9 +9,11 @@
 # }
 #
 # To use this from another workflow:
-# 1. Create a JSON file with the above structure
-# 2. Upload it as an artifact named "pr-comment-data"
-# 3. Add your workflow name to the "workflows" list below
+# 1. Write your comment message to a file
+# 2. Use the canonical/chisel-releases/.github/actions/upload-pr-comment@main
+#    action to create and upload the "pr-comment-data" artifact
+# 3. Add your workflow name to the "workflows" list below. This will trigger
+#    this workflow to run, pick up the artifact, and post the comment.
 
 name: Post PR comment
 
@@ -69,7 +71,7 @@ jobs:
             fi
           fi
 
-      - name: Post comment to PR
+      - name: Post message to PR
         if: steps.comment-data.outputs.has-comment == 'true'
         uses: mshick/add-pr-comment@v2
         with:
