@@ -1,5 +1,3 @@
-# Generic PR comment workflow
-# 
 # This workflow listens for completion of other workflows and posts PR comments
 # when those workflows upload artifacts with names matching the pattern:
 # pr-comment_<pr-number>_<message-id>
@@ -11,7 +9,7 @@
 # 3. Add your workflow name to the "workflows" list below. This will trigger
 #    this workflow to run, pick up the artifacts, and post the comments.
 
-name: Post PR comment
+name: Post PR comments
 
 on:
   workflow_run:
@@ -30,8 +28,8 @@ jobs:
     steps:
       # We cannot use actions/download-artifact here because this workflow needs to
       # download artifacts from a different workflow (the one that triggered it).
-      - name: Find and download PR comment artifacts
-        id: download-artifacts
+      - name: Find PR comment artifacts
+        id: find-artifacts
         uses: actions/github-script@v7
         with:
           script: |
@@ -56,12 +54,11 @@ jobs:
             
             let matrix = [];
             for (let artifact of matchArtifacts) {
-              console.log(`Downloading artifact: ${artifact.name}`);
+              console.log(`Found artifact: ${artifact.name}`);
               
               // Parse PR number and message ID from artifact name
               let match = artifact.name.match(/^pr-comment_(\d+)_([a-zA-Z0-9_-]+)$/);
               if (!match) {
-                // This should not happen since we're already filtering above
                 console.log(`Skipping artifact with invalid name: ${artifact.name}`);
                 continue;
               }
@@ -69,22 +66,11 @@ jobs:
               let prNumber = match[1];
               let messageId = match[2];
               
-              let download = await github.rest.actions.downloadArtifact({
-                 owner: context.repo.owner,
-                 repo: context.repo.repo,
-                 artifact_id: artifact.id,
-                 archive_format: 'zip',
-              });
-              
-              let fs = require('fs');
-              let zipFileName = `${artifact.name}.zip`;
-              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${zipFileName}`, Buffer.from(download.data));
-              
               matrix.push({
                 'artifact-name': artifact.name,
-                'zip-file': zipFileName,
                 'pr-number': prNumber,
-                'message-id': messageId
+                'message-id': messageId,
+                'run-id': context.payload.workflow_run.id
               });
             }
             
@@ -94,7 +80,7 @@ jobs:
       - name: Set up matrix
         id: setup-matrix
         run: |
-          matrix='${{ steps.download-artifacts.outputs.matrix }}'
+          matrix='${{ steps.find-artifacts.outputs.matrix }}'
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           if [ "$matrix" = "[]" ]; then
             echo "No PR comment artifacts found"
@@ -114,16 +100,20 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.find-comments.outputs.matrix) }}
     steps:
-      - name: Extract and post comment
+      - name: Download PR comment artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ matrix.artifact-name }}
+          run-id: ${{ matrix.run-id }}
+
+      - name: Verify comment file
         run: |
-          # Extract the artifact
-          unzip "${{ matrix.zip-file }}"
-          
-          # The extracted file should be named like the artifact but with .txt extension
+          # The downloaded file should be named like the artifact but with .txt extension
           message_file="${{ matrix.artifact-name }}.txt"
           
           if [ ! -f "$message_file" ]; then
-            echo "Message file $message_file not found after extraction"
+            echo "Message file $message_file not found after download"
+            ls -la
             exit 1
           fi
           
