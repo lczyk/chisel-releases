@@ -26,15 +26,15 @@ runs:
           echo "Message file ${{ inputs.message-file }} not found, skipping PR comment"
           exit 0
         fi
-        
-        message=$(cat "${{ inputs.message-file }}")
-        cat > pr-comment.json << 'EOF'
-        {
-          "pr-number": ${{ github.event.number }},
-          "message-id": "${{ inputs.message-id }}",
-          "message": $(echo "$message" | jq -Rs .)
-        }
-        EOF
+        jq -n \
+          --arg pr_number "${{ github.event.number }}" \
+          --arg message_id "${{ inputs.message-id }}" \
+          --arg message "$(cat "${{ inputs.message-file }}")" \
+          '{
+            "pr-number": ($pr_number | tonumber),
+            "message-id": $message_id,
+            "message": $message
+          }' > pr-comment.json
 
     - name: Upload PR comment data
       uses: actions/upload-artifact@v4
