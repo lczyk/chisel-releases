@@ -12,7 +12,9 @@ jobs:
       startswith(github.base_ref, 'ubuntu-')
     steps:
       - name: Echo Hello
-        run: echo "Hello. I'm workflow C" > message.txt
+        run: |
+          sleep 30
+          echo "Hello. I'm workflow C" > message.txt
 
       - name: Post message to PR
         uses: lczyk/chisel-releases/.github/actions/add-pr-comment@main
