@@ -7,18 +7,10 @@ on:
       - "ubuntu-*"
 
 jobs:
-  # pkg-deps:
-  #   name: Package dependencies
-  #   uses: lczyk/chisel-releases/.github/workflows/pkg-deps.yaml@main
-  
   test-workflow-A:
     name: Test workflow A
     uses: lczyk/chisel-releases/.github/workflows/test-workflow-A.yaml@main
-  
-  test-workflow-B:
-    name: Test workflow B
-    uses: lczyk/chisel-releases/.github/workflows/test-workflow-B.yaml@main
-  
+
   test-workflow-C:
     name: Test workflow C
     uses: lczyk/chisel-releases/.github/workflows/test-workflow-C.yaml@main
