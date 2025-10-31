@@ -1,11 +1,11 @@
-name: My little test workflow
+name: My little test workflow C
 
 on:
   workflow_call:
 
 jobs:
   hello-world:
-    name: Hello World
+    name: Hello World C
     runs-on: ubuntu-latest
     if: |
       startswith(github.event_name, 'pull_request') &&
@@ -18,4 +18,4 @@ jobs:
         uses: lczyk/chisel-releases/.github/actions/add-pr-comment@main
         with:
           message-path: message.txt
-          message-id: "hello-world"
+          message-id: "hello-world-c"
