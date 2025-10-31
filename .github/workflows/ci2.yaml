@@ -1,0 +1,12 @@
+name: Pkg coverage 2
+run-name: Pkg coverage for ${{ github.ref }}
+
+on:
+  pull_request:
+    branches:
+      - "ubuntu-*"
+
+jobs:
+  test-workflow-B:
+    name: Test workflow B
+    uses: lczyk/chisel-releases/.github/workflows/test-workflow-B.yaml@main
