@@ -1,0 +1,21 @@
+name: My little test workflow
+
+on:
+  workflow_call:
+
+jobs:
+  hello-world:
+    name: Hello World
+    runs-on: ubuntu-latest
+    if: |
+      startswith(github.event_name, 'pull_request') &&
+      startswith(github.base_ref, 'ubuntu-')
+    steps:
+      - name: Echo Hello
+        run: echo "Hello. I'm workflow A" > message.txt
+
+      - name: Post message to PR
+        uses: lczyk/chisel-releases/.github/actions/add-pr-comment@main
+        with:
+          message-path: message.txt
+          message-id: "hello-world"

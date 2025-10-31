@@ -12,7 +12,7 @@ jobs:
       startswith(github.base_ref, 'ubuntu-')
     steps:
       - name: Echo Hello
-        run: echo "Hello. I'm some other test workflow." > message.txt
+        run: echo "Hello. I'm workflow B" > message.txt
 
       - name: Post message to PR
         uses: lczyk/chisel-releases/.github/actions/add-pr-comment@main
