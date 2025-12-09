@@ -7,12 +7,12 @@
 arch=$(uname -m)-linux-gnu
 slices=(
     rustc-1.85_rustc
-    gcc-14-"${arch//_/-}"_gcc-14
+    gcc-15-"${arch//_/-}"_gcc-15
     binutils-"${arch//_/-}"_linker
-    libgcc-14-dev_core
+    libgcc-15-dev_core
 )
 rootfs="$(install-slices "${slices[@]}")"
-ln -s "${arch}"-gcc-14 "${rootfs}"/usr/bin/cc
+ln -s "${arch}"-gcc-15 "${rootfs}"/usr/bin/cc
 ln -s "${arch}"-ld "${rootfs}"/usr/bin/ld
 
 cp testfiles/test_std.rs "${rootfs}"/test_std.rs
