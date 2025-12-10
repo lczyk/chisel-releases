@@ -37,7 +37,7 @@ backends:
       lxc exec $SPREAD_SYSTEM -- bash -c "echo root:${SPREAD_SYSTEM_PASSWORD} | chpasswd"
       lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
 
-      [ -n "${GITHUB_TOKEN:-}" ] && lxc exec $SPREAD_SYSTEM -- bash -c "echo 'export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"' >> /env-from-host;"
+      # [ -n "${GITHUB_TOKEN:-}" ] && lxc exec $SPREAD_SYSTEM -- bash -c "echo 'export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"' >> /env-from-host;"
 
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
     discard: lxc stop $SPREAD_SYSTEM || true
@@ -92,13 +92,6 @@ prepare: |
   arch="$(dpkg --print-architecture | sed -e 's/armhf/arm/g' -e 's/ppc64el/ppc64le/g')"
 
   apt install -y curl wget
-
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
-    echo "we have github token"
-  else
-    echo "no github token"
-    exit 99
-  fi
 
   AUTHORIZATION="${GITHUB_TOKEN:+Bearer ${GITHUB_TOKEN}}"
   
