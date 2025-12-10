@@ -38,13 +38,15 @@ backends:
       lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
 
       if [ -n "${GITHUB_TOKEN:-}" ]; then
-        lxc config set $SPREAD_SYSTEM environment.GITHUB_TOKEN "${GITHUB_TOKEN}"
+        # lxc config set $SPREAD_SYSTEM environment.GITHUB_TOKEN "${GITHUB_TOKEN}"
+        # lxc exec $SPREAD_SYSTEM -- bash -c "echo 'export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"' >> /etc/profile.d/github_token.sh"
+        :
       else
         echo "no github token"
         exit 99
       fi
 
-      lxc config set $SPREAD_SYSTEM environment.TEST_VALUE "hello form host"
+      lxc exec $SPREAD_SYSTEM --env TEST_VALUE="hello form host" bash -c "echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> ~/.env"
 
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
     discard: lxc stop $SPREAD_SYSTEM || true
@@ -93,6 +95,8 @@ backends:
           password: ubuntu
 
 prepare: |
+  [ -f ~/.env ] && . ~/.env # source env from host if exists
+
   # Deb arch to GOARCH
   arch="$(dpkg --print-architecture | sed -e 's/armhf/arm/g' -e 's/ppc64el/ppc64le/g')"
 
