@@ -6,6 +6,7 @@ environment:
   PROJECT_PATH: /chisel-releases
   SHARED_LIBRARIES: $PROJECT_PATH/tests/spread/lib
   PATH: /snap/bin:$PATH:$SHARED_LIBRARIES
+  GITHUB_TOKEN: $GITHUB_TOKEN
 
 exclude:
   - .github
