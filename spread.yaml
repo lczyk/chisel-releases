@@ -96,6 +96,8 @@ prepare: |
   sha384sum -c chisel_v*sha384
   tar -xf chisel_v*tar.gz -C /usr/local/bin
 
+  exit 99 # to see the spread output
+
 prepare-each: chisel version
 
 suites:
