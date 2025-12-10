@@ -37,7 +37,7 @@ backends:
       lxc exec $SPREAD_SYSTEM -- bash -c "echo root:${SPREAD_SYSTEM_PASSWORD} | chpasswd"
       lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
 
-      if [ -n "${GITHUB_TOKEN:-}" ];
+      if [ -n "${GITHUB_TOKEN:-}" ]; then
         lxc config set $SPREAD_SYSTEM environment.GITHUB_TOKEN "${GITHUB_TOKEN}"
       else
         echo "no github token"
@@ -104,6 +104,7 @@ prepare: |
     echo "we have github token"
   else
     echo "no github token"
+    exit 99
   fi
 
   AUTHORIZATION=""
