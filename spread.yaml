@@ -87,7 +87,7 @@ prepare: |
   arch="$(dpkg --print-architecture | sed -e 's/armhf/arm/g' -e 's/ppc64el/ppc64le/g')"
 
   apt install -y curl wget
-  curl -s https://api.github.com/repos/canonical/chisel/releases/latest \
+  curl -vs https://api.github.com/repos/canonical/chisel/releases/latest \
     | awk "/browser_download_url/ && /chisel_v/ && /_$arch\./" \
     | cut -d : -f 2,3 \
     | tr -d \" \
