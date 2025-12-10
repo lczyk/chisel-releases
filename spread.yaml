@@ -88,12 +88,18 @@ prepare: |
 
   apt install -y curl wget
 
-  echo "GITHUB_TOKEN = $GITHUB_TOKEN"
+  echo "GITHUB_TOKEN = ${GITHUB_TOKEN:unset}"
+
+  AUTHORIZATION=""
+  if [ -n "${GITHUB_TOKEN}" ]; then
+    AUTHORIZATION="Bearer ${GITHUB_TOKEN}"
+  fi
+
   gh_api_response=$( \
     curl -vs /
       -H "Accept: application/vnd.github.v3+json" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
-      -H "Bearer $GITHUB_TOKEN" \
+      -H "Authorization: ${AUTHORIZATION}" \
       https://api.github.com/repos/canonical/chisel/releases/latest \
     )
 
