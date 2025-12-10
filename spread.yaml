@@ -6,7 +6,6 @@ environment:
   PROJECT_PATH: /chisel-releases
   SHARED_LIBRARIES: $PROJECT_PATH/tests/spread/lib
   PATH: /snap/bin:$PATH:$SHARED_LIBRARIES
-  GITHUB_TOKEN: ${GITHUB_TOKEN:-}
 
 exclude:
   - .github
@@ -37,6 +36,9 @@ backends:
       lxc exec $SPREAD_SYSTEM -- bash -c "test -d /etc/ssh/sshd_config.d && echo -e 'PermitRootLogin=yes\nPasswordAuthentication=yes' > /etc/ssh/sshd_config.d/00-spread.conf"
       lxc exec $SPREAD_SYSTEM -- bash -c "echo root:${SPREAD_SYSTEM_PASSWORD} | chpasswd"
       lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
+
+      [ -n "${GITHUB_TOKEN:-}" ] && lxc config set $SPREAD_SYSTEM environment.GITHUB_TOKEN "${GITHUB_TOKEN}"
+
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
     discard: lxc stop $SPREAD_SYSTEM || true
     systems:
