@@ -72,6 +72,8 @@ jobs:
 
       - name: Build and run spread
         if: ${{ steps.spread-suites.outputs.run-tasks }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           (cd _spread/cmd/spread && go build)
           env
