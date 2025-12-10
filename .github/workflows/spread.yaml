@@ -74,4 +74,5 @@ jobs:
         if: ${{ steps.spread-suites.outputs.run-tasks }}
         run: |
           (cd _spread/cmd/spread && go build)
+          env
           _spread/cmd/spread/spread -v ${{ steps.spread-suites.outputs.run-tasks }}
