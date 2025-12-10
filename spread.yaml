@@ -37,7 +37,14 @@ backends:
       lxc exec $SPREAD_SYSTEM -- bash -c "echo root:${SPREAD_SYSTEM_PASSWORD} | chpasswd"
       lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
 
-      [ -n "${GITHUB_TOKEN:-}" ] && lxc config set $SPREAD_SYSTEM environment.GITHUB_TOKEN "${GITHUB_TOKEN}"
+      if [ -n "${GITHUB_TOKEN:-}" ];
+        lxc config set $SPREAD_SYSTEM environment.GITHUB_TOKEN "${GITHUB_TOKEN}"
+      else
+        echo "no github token"
+        exit 99
+      fi
+
+      lxc config set $SPREAD_SYSTEM environment.TEST_VALUE "hello form host"
 
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
     discard: lxc stop $SPREAD_SYSTEM || true
@@ -88,6 +95,8 @@ backends:
 prepare: |
   # Deb arch to GOARCH
   arch="$(dpkg --print-architecture | sed -e 's/armhf/arm/g' -e 's/ppc64el/ppc64le/g')"
+
+  echo "Test value: ${TEST_VALUE:-no test value}"
 
   apt install -y curl wget
 
