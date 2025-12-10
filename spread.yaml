@@ -37,7 +37,7 @@ backends:
       lxc exec $SPREAD_SYSTEM -- bash -c "echo root:${SPREAD_SYSTEM_PASSWORD} | chpasswd"
       lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
 
-      # [ -n "${GITHUB_TOKEN:-}" ] && lxc exec $SPREAD_SYSTEM -- bash -c "echo 'export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"' >> /env-from-host;"
+      [ -n "${GITHUB_TOKEN:-}" ] && lxc exec $SPREAD_SYSTEM -- bash -c "echo 'export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"' >> /env-from-host;"
 
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
     discard: lxc stop $SPREAD_SYSTEM || true
@@ -93,12 +93,10 @@ prepare: |
 
   apt install -y curl wget
 
-  AUTHORIZATION="${GITHUB_TOKEN:+Bearer ${GITHUB_TOKEN}}"
-  
   curl -vs \
     -H "Accept: application/vnd.github.v3+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    -H "Authorization: ${AUTHORIZATION}" \
+    -H "Authorization: ${GITHUB_TOKEN:+Bearer ${GITHUB_TOKEN}}" \
     https://api.github.com/repos/canonical/chisel/releases/latest \
     1> /tmp/gh_api_response.out 2> /tmp/gh_api_response.err || true
   
@@ -112,8 +110,6 @@ prepare: |
 
   sha384sum -c chisel_v*sha384
   tar -xf chisel_v*tar.gz -C /usr/local/bin
-
-  exit 99 # to see the spread output
 
 prepare-each: chisel version
 
