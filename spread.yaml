@@ -87,7 +87,17 @@ prepare: |
   arch="$(dpkg --print-architecture | sed -e 's/armhf/arm/g' -e 's/ppc64el/ppc64le/g')"
 
   apt install -y curl wget
-  curl -vs https://api.github.com/repos/canonical/chisel/releases/latest \
+
+  echo "GITHUB_TOKEN = $GITHUB_TOKEN"
+  gh_api_response=$( \
+    curl -vs /
+      -H "Accept: application/vnd.github.v3+json" \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      -H "Bearer $GITHUB_TOKEN" \
+      https://api.github.com/repos/canonical/chisel/releases/latest \
+    )
+
+  echo "$gh_api_response" \
     | awk "/browser_download_url/ && /chisel_v/ && /_$arch\./" \
     | cut -d : -f 2,3 \
     | tr -d \" \
