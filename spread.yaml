@@ -100,11 +100,7 @@ prepare: |
     exit 99
   fi
 
-  AUTHORIZATION=""
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
-    AUTHORIZATION="Bearer ${GITHUB_TOKEN}"
-  fi
-
+  AUTHORIZATION="${GITHUB_TOKEN:+Bearer ${GITHUB_TOKEN}}"
   
   curl -vs \
     -H "Accept: application/vnd.github.v3+json" \
