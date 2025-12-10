@@ -37,29 +37,7 @@ backends:
       lxc exec $SPREAD_SYSTEM -- bash -c "echo root:${SPREAD_SYSTEM_PASSWORD} | chpasswd"
       lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
 
-      if [ -n "${GITHUB_TOKEN:-}" ]; then
-        # lxc config set $SPREAD_SYSTEM environment.GITHUB_TOKEN "${GITHUB_TOKEN}"
-        # lxc exec $SPREAD_SYSTEM -- bash -c "echo 'export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"' >> /etc/profile.d/github_token.sh"
-        :
-      else
-        echo "no github token"
-        exit 99
-      fi
-
-      TEST_VALUE="hello from host"
-      lxc exec $SPREAD_SYSTEM -- bash -c "
-        echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> /env-from-host;
-      "
-
-      # Make sure the file was created in the lxd machine
-      if lxc exec $SPREAD_SYSTEM -- test -f /env-from-host; then
-        echo "env-from-host created successfully in $SPREAD_SYSTEM"
-        # cat it
-        lxc exec $SPREAD_SYSTEM -- cat /env-from-host
-      else
-        echo "env-from-host NOT created in $SPREAD_SYSTEM"
-        exit 99
-      fi
+      [ -n "${GITHUB_TOKEN:-}" ] && lxc exec $SPREAD_SYSTEM -- bash -c "echo 'export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"' >> /env-from-host;"
 
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
     discard: lxc stop $SPREAD_SYSTEM || true
@@ -112,8 +90,6 @@ prepare: |
 
   # Deb arch to GOARCH
   arch="$(dpkg --print-architecture | sed -e 's/armhf/arm/g' -e 's/ppc64el/ppc64le/g')"
-
-  echo "Test value: ${TEST_VALUE:-no test value}"
 
   apt install -y curl wget
 
