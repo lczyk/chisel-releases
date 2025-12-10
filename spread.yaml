@@ -100,7 +100,7 @@ prepare: |
   fi
 
   gh_api_response=$( \
-    curl -vs /
+    curl -vs \
       -H "Accept: application/vnd.github.v3+json" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
       -H "Authorization: ${AUTHORIZATION}" \
