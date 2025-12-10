@@ -48,12 +48,15 @@ backends:
 
       TEST_VALUE="hello from host"
       lxc exec $SPREAD_SYSTEM -- bash -c "
-        echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> ~/env-from-host
+        touch ~/env-from-host;
+        echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> ~/env-from-host;
       "
 
       # Make sure the file was created in the lxd machine
       if lxc exec $SPREAD_SYSTEM -- test -f ~/env-from-host; then
         echo "env-from-host created successfully in $SPREAD_SYSTEM"
+        # cat it
+        lxc exec $SPREAD_SYSTEM -- cat ~/env-from-host
       else
         echo "env-from-host NOT created in $SPREAD_SYSTEM"
         exit 99
