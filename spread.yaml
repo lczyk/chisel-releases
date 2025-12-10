@@ -48,7 +48,7 @@ backends:
 
       TEST_VALUE="hello from host"
       lxc exec $SPREAD_SYSTEM -- bash -c "
-        echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> /env-from-host
+        echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> ~/env-from-host
       "
 
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
