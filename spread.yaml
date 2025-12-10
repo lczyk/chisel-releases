@@ -50,6 +50,8 @@ backends:
       lxc exec $SPREAD_SYSTEM -- bash -c "
         touch ~/env-from-host;
         echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> ~/env-from-host;
+        ls ~;
+        cat ~/env-from-host;
       "
 
       # Make sure the file was created in the lxd machine
