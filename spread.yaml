@@ -88,14 +88,14 @@ prepare: |
 
   apt install -y curl wget
 
-  if [ -n "${GITHUB_TOKEN}" ]; then
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
     echo "we have github token"
   else
     echo "no github token"
   fi
 
   AUTHORIZATION=""
-  if [ -n "${GITHUB_TOKEN}" ]; then
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
     AUTHORIZATION="Bearer ${GITHUB_TOKEN}"
   fi
 
