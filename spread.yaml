@@ -88,7 +88,11 @@ prepare: |
 
   apt install -y curl wget
 
-  echo "GITHUB_TOKEN = ${GITHUB_TOKEN:unset}"
+  if [ -n "${GITHUB_TOKEN}" ]; then
+    echo "we have github token"
+  else
+    echo "no github token"
+  fi
 
   AUTHORIZATION=""
   if [ -n "${GITHUB_TOKEN}" ]; then
