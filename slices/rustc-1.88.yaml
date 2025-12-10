@@ -24,7 +24,7 @@ slices:
       - libc6-dev_libm
       - libc6_libs
       - libgcc-s1_libs
-      - libllvm19_libs
+      - libllvm20_libs
       - libstd-rust-1.88-dev_libs
       - libstdc++6_libs
     contents:
