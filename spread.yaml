@@ -51,6 +51,14 @@ backends:
         echo 'export TEST_VALUE=\"${TEST_VALUE}\"' >> ~/env-from-host
       "
 
+      # Make sure the file was created in the lxd machine
+      if lxc exec $SPREAD_SYSTEM -- test -f ~/env-from-host; then
+        echo "env-from-host created successfully in $SPREAD_SYSTEM"
+      else
+        echo "env-from-host NOT created in $SPREAD_SYSTEM"
+        exit 99
+      fi
+
       ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address'`
     discard: lxc stop $SPREAD_SYSTEM || true
     systems:
@@ -98,7 +106,10 @@ backends:
           password: ubuntu
 
 prepare: |
-  [ -f ~/.env-from-host ] && . ~/.env-from-host # source env from host if exists
+  ls ~
+  echo "HOME=$HOME"
+
+  test -f ~/env-from-host && . ~/env-from-host # source env from host if exists
 
   # Deb arch to GOARCH
   arch="$(dpkg --print-architecture | sed -e 's/armhf/arm/g' -e 's/ppc64el/ppc64le/g')"
