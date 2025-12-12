@@ -11,7 +11,7 @@ slices:
       - libllvm19_libs
       - libstdc++6_libs
     contents:
-      /usr/lib/*-linux-*/librustc_driver-*.so: # -> ../rust-1.88/lib/librustc_driver-*.so
+      /usr/lib/*-linux-*/librustc_driver-*.so:  # -> ../rust-1.88/lib/librustc_driver-*.so
       /usr/lib/rust-1.85/lib/librustc_driver-*.so:
 
   copyright:
