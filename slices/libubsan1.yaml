@@ -16,5 +16,4 @@ slices:
     essential:
       - gcc-15-base_copyright
     contents:
-      # Symlink to gcc-15-base
-      /usr/share/doc/libubsan1:
+      /usr/share/doc/libubsan1: # -> gcc-15-base
