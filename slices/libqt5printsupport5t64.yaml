@@ -10,7 +10,6 @@ slices:
       /usr/lib/*-linux-*/qt5/plugins/printsupport/libcupsprintersupport.so*:
     essential:
       - libc6_libs
-      - libgcc-s1_libs
       - libglib2.0-0t64_libs
       - libqt5core5t64_libs
       - libqt5dbus5t64_libs
