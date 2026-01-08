@@ -23,7 +23,3 @@ slices:
       - shared-mime-info_bins
       - shared-mime-info_data
       - zlib1g_libs
-
-  doc:
-    contents:
-      /usr/share/doc/libqt5core5t64/**:
