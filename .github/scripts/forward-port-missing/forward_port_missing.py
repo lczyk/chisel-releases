@@ -310,10 +310,13 @@ def format_forward_port_json(
             output_pr["comparisons"] = {}
             output_pr["discontinued"] = {}
             for i, (future_release, comparisons) in enumerate(comparisons_by_future_release.items()):
+                if not comparisons:
+                    output_pr["discontinued"]["ubuntu-" + future_release.version] = []
+                    continue
                 comparison = next(iter(comparisons))
                 discontinued_slices = sorted(comparison.discontinued_slices)
                 output_pr["discontinued"]["ubuntu-" + future_release.version] = discontinued_slices
-                if i == 0:
+                if i == 0 and "slices" not in output_pr:
                     output_pr["slices"] = sorted(comparison.slices)
 
         for future_release, comparisons in comparisons_by_future_release.items():
