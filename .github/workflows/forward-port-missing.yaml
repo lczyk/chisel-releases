@@ -27,19 +27,6 @@ jobs:
 
     steps:
 
-      #== ENV ==================================================================
-
-      - name: "Determine run mode"
-        id: determine-run-mode
-        run: |
-          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "run_forward_port_missing=true" >> $GITHUB_OUTPUT
-            echo "run_apply_labels=true" >> $GITHUB_OUTPUT
-          else
-            echo "run_forward_port_missing=false" >> $GITHUB_OUTPUT
-            echo "run_apply_labels=false" >> $GITHUB_OUTPUT
-          fi
-      
       #== SETUP ================================================================
 
       - uses: actions/checkout@v4
@@ -81,13 +68,11 @@ jobs:
           ./chisel_releases_data.py --jobs=-1 1> data.json
 
       - name: "Check for forward port"
-        if: steps.determine-run-mode.outputs.run_forward_port_missing == 'true'
         run: |
           ln -s "${{ env.files_main }}/${{ env.src_dir }}/forward_port_missing.py" .
           ./forward_port_missing.py data.json | jq | tee results.json
 
       - name: "Apply labels"
-        if: steps.determine-run-mode.outputs.run_apply_labels == 'true'
         env:
           # NOTE: we use the ROCKSBOT_PR_TOKEN to apply the labels
           GH_TOKEN: ${{ secrets.ROCKSBOT_PR_TOKEN }}
