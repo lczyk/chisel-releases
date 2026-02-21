@@ -29,19 +29,16 @@ jobs:
 
       #== ENV ==================================================================
 
-      # If we're running on a schedule or via workflow_dispatch, we want to set the RUN_FORWARD_PORT_MISSING
-      # and RUN_APPLY_LABELS env vars to true. If not, set them to false.
-      - name: "Set env variables (schedule or workflow_dispatch)"
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      - name: "Determine run mode"
+        id: determine-run-mode
         run: |
-          echo "RUN_FORWARD_PORT_MISSING=true" >> $GITHUB_ENV
-          echo "RUN_APPLY_LABELS=true" >> $GITHUB_ENV
-      
-      - name: "Set env variables (called from another workflow)"
-        if: ${{ github.event_name == 'workflow_call' }}
-        run: |
-          echo "RUN_FORWARD_PORT_MISSING=false" >> $GITHUB_ENV
-          echo "RUN_APPLY_LABELS=false" >> $GITHUB_ENV
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "run_forward_port_missing=true" >> $GITHUB_OUTPUT
+            echo "run_apply_labels=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_forward_port_missing=false" >> $GITHUB_OUTPUT
+            echo "run_apply_labels=false" >> $GITHUB_OUTPUT
+          fi
       
       #== SETUP ================================================================
 
@@ -84,13 +81,13 @@ jobs:
           ./chisel_releases_data.py --jobs=-1 1> data.json
 
       - name: "Check for forward port"
-        if: env.RUN_FORWARD_PORT_MISSING == 'true'
+        if: steps.determine-run-mode.outputs.run_forward_port_missing == 'true'
         run: |
           ln -s "${{ env.files_main }}/${{ env.src_dir }}/forward_port_missing.py" .
           ./forward_port_missing.py data.json | jq | tee results.json
 
       - name: "Apply labels"
-        if: env.RUN_APPLY_LABELS == 'true'
+        if: steps.determine-run-mode.outputs.run_apply_labels == 'true'
         env:
           # NOTE: we use the ROCKSBOT_PR_TOKEN to apply the labels
           GH_TOKEN: ${{ secrets.ROCKSBOT_PR_TOKEN }}
