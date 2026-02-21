@@ -192,10 +192,10 @@ class PR:
 
 
 def check_github_token() -> None:
-    token = os.getenv("GITHUB_TOKEN", None)
+    token = os.getenv("GH_TOKEN", None)
     if token is not None:
-        logging.debug("GITHUB_TOKEN is set.")
+        logging.debug("GH_TOKEN is set.")
         if not token.strip():
-            logging.warning("GITHUB_TOKEN is empty.")
+            logging.warning("GH_TOKEN is empty.")
     else:
-        logging.debug("GITHUB_TOKEN is not set.")
+        logging.debug("GH_TOKEN is not set.")

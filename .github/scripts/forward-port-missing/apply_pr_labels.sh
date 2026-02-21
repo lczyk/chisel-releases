@@ -67,7 +67,7 @@ main() {
     local results_path="$1"
 
     if [ "$dry_run" = false ]; then
-        test -z "$GITHUB_TOKEN" && { echo "GITHUB_TOKEN is not set. Aborting."; exit 1; }
+        test -z "$GH_TOKEN" && { echo "GH_TOKEN is not set. Aborting."; exit 1; }
         command -v gh >/dev/null 2>&1 || { echo >&2 "gh is required but it's not installed. Aborting."; exit 1; }
     fi
     command -v jq >/dev/null 2>&1 || { echo >&2 "jq is required but it's not installed. Aborting."; exit 1; }
