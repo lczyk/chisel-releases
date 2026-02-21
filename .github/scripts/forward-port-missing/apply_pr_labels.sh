@@ -55,14 +55,6 @@ parse_args() {
     results_file=$1
 }
 
-_maybe_dry_run() {
-    if [ "$dry_run" = true ]; then
-        echo "> $(echo "$1" | tr -s ' ')"
-    else
-        eval "$1"
-    fi
-}
-
 main() {
     local results_path="$1"
 
@@ -87,10 +79,18 @@ main() {
 
         if [ "$forward_ported" = false ] && [ "$label" = false ]; then
             echo "  Adding the 'forward port missing' label."
-            _maybe_dry_run "gh pr edit $number --add-label \"forward port missing\""
+            if [ "$dry_run" = true ]; then
+                echo "> gh pr edit $number --add-label \"forward port missing\""
+            else
+                gh pr edit "$number" --add-label "forward port missing"
+            fi
         elif [ "$forward_ported" = true ] && [ "$label" = true ]; then
             echo "  Removing the 'forward port missing' label."
-            _maybe_dry_run "gh pr edit $number --remove-label \"forward port missing\""
+            if [ "$dry_run" = true ]; then
+                echo "> gh pr edit $number --remove-label \"forward port missing\""
+            else
+                gh pr edit "$number" --remove-label "forward port missing"
+            fi
         else
             echo "  No label changes needed."
         fi
