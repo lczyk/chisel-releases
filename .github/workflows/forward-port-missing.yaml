@@ -78,8 +78,7 @@ jobs:
 
       - name: "Gather data"
         env:
-          GITHUB_TOKEN: ${{ secrets.ROCKSBOT_PR_TOKEN }}
-          CHISEL_RELEASES_URL: http://github.com/canonical/chisel-releases
+          CHISEL_RELEASES_URL: https://github.com/canonical/chisel-releases
         run: |
           ln -s "${{ env.files_main }}/${{ env.src_dir }}/chisel_releases_data.py" .
           ./chisel_releases_data.py --jobs=-1 1> data.json
@@ -93,7 +92,8 @@ jobs:
       - name: "Apply labels"
         if: env.RUN_APPLY_LABELS == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.ROCKSBOT_PR_TOKEN }}
+          # NOTE: we use the ROCKSBOT_PR_TOKEN to apply the labels
+          GH_TOKEN: ${{ secrets.ROCKSBOT_PR_TOKEN }}
         run: |
           ln -s "${{ env.files_main }}/${{ env.src_dir }}/apply_pr_labels.sh" .
           ./apply_pr_labels.sh results.json

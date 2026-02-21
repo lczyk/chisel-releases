@@ -53,7 +53,7 @@ def _geturl_github(url: str, params: dict[str, str | int] | None = None) -> requ
     url = url.replace("github.com", "api.github.com/repos") if "api.github.com" not in url else url
     url = url.rstrip("/")
     headers = {"Accept": "application/vnd.github.v3+json", "X-GitHub-Api-Version": "2022-11-28"}
-    github_token = os.getenv("GITHUB_TOKEN", None)
+    github_token = os.getenv("GH_TOKEN", None)
     if github_token:
         headers["Authorization"] = f"Bearer {github_token}"
 
@@ -62,9 +62,9 @@ def _geturl_github(url: str, params: dict[str, str | int] | None = None) -> requ
     if response.status_code == 404:
         raise Exception(f"Resource not found at '{url}'.")
     elif response.status_code == 403:
-        raise Exception(f"Rate limit exceeded for '{url}'. Are you using the GITHUB_TOKEN?")
+        raise Exception(f"Rate limit exceeded for '{url}'. Are you using the GH_TOKEN?")
     elif response.status_code == 401:
-        raise Exception(f"Unauthorized access to '{url}'. Maybe bad credentials? Check GITHUB_TOKEN.")
+        raise Exception(f"Unauthorized access to '{url}'. Maybe bad credentials? Check GH_TOKEN.")
     elif response.status_code != 200:
         raise Exception(f"Failed to fetch '{url}'. HTTP status code: {response.status_code}")
 
