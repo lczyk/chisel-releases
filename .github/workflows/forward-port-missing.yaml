@@ -84,6 +84,12 @@ jobs:
           set -o pipefail
           ln -s "${{ env.main }}/${{ env.src_dir }}/forward_port_missing.py" .
           ./forward_port_missing.py data/index.db.br | jq | tee results.json
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v6
+        with:
+          name: forward-port-missing-results
+          path: results.json
 
       # - name: "Apply labels"
       #   env:
