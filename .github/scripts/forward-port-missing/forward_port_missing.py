@@ -339,9 +339,10 @@ def load_data(
         _VERSION_TO_CODENAME = {release.version: release.codename for release in ubuntu_releases}
 
         cursor.execute("SELECT DISTINCT branch, package FROM slice")
-        packages_by_release: dict[UbuntuRelease, set[str]] = {
-            UbuntuRelease.from_branch_name(branch): set() for branch, _ in cursor.fetchall()
-        }
+        packages_by_release: dict[UbuntuRelease, set[str]] = {}
+        for branch, package in cursor.fetchall():
+            ubuntu_release = UbuntuRelease.from_branch_name(branch)
+            packages_by_release.setdefault(ubuntu_release, set()).add(package)
 
         cursor.execute("SELECT sha, ref, repo_name, repo_owner FROM pr_commits")
         commits: dict[str, Commit] = {
