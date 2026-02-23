@@ -81,6 +81,7 @@ jobs:
 
       - name: "Check forward porting status"
         run: |
+          set -o pipefail
           ln -s "${{ env.main }}/${{ env.src_dir }}/forward_port_missing.py" .
           ./forward_port_missing.py data/index.db.br | jq | tee results.json
 
