@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from librt.vecs import T
 
 import argparse
 import json
@@ -423,7 +424,7 @@ def main(args: argparse.Namespace) -> None:
     new_slices_by_pr = _group_new_slices_by_pr(slices_in_head_by_pr, slices_in_base_by_pr)
     grouped_comparisons = _get_grouped_comparisons(prs_by_ubuntu_release, new_slices_by_pr, packages_by_release)
 
-    print_pipe_friendly(format_forward_port_json(grouped_comparisons, new_slices_by_pr, add_extra_info=False))
+    print_pipe_friendly(format_forward_port_json(grouped_comparisons, new_slices_by_pr, add_extra_info=True))
 
 
 ################################################################################
