@@ -21,6 +21,8 @@ import brotli
 class UbuntuRelease:
     version: str
     codename: str
+    supported: bool
+    devel: bool
 
     def __str__(self) -> str:
         return f"ubuntu-{self.version} ({self.codename})"
@@ -39,14 +41,14 @@ class UbuntuRelease:
     def from_branch_name(cls, branch: str) -> UbuntuRelease:
         assert branch.startswith("ubuntu-"), "Branch name must start with 'ubuntu-'"
         version = branch.split("-", 1)[1]
-        codename = _VERSION_TO_CODENAME.get(version)
-        if codename is None:
+        release = _VERSION_TO_RELEASE.get(version)
+        if release is None:
             raise ValueError(f"Unknown Ubuntu version '{version}' for branch '{branch}'")
-        return cls(version=version, codename=codename)
+        return release
 
 
 # Will be populated in load_data() and used in UbuntuRelease.from_branch_name()
-_VERSION_TO_CODENAME: dict[str, str] = {}
+_VERSION_TO_RELEASE: dict[str, UbuntuRelease] = {}
 
 
 def print_pipe_friendly(output: str) -> None:
@@ -331,14 +333,30 @@ def load_data(
         check_version_compatibility(conn)
 
         cursor.execute("SELECT version, codename, supported, devel FROM release")
-        ubuntu_releases: list[UbuntuRelease] = [
-            UbuntuRelease(version=row[0], codename=row[1]) for row in cursor.fetchall()
-        ]
+        ubuntu_releases: set[UbuntuRelease] = {
+            UbuntuRelease(
+                version=row[0],
+                codename=row[1],
+                supported=bool(row[2]),
+                devel=bool(row[3]),
+            )
+            for row in cursor.fetchall()
+        }
 
-        global _VERSION_TO_CODENAME
-        _VERSION_TO_CODENAME = {release.version: release.codename for release in ubuntu_releases}
+        global _VERSION_TO_RELEASE
+        _VERSION_TO_RELEASE = {release.version: release for release in ubuntu_releases}
 
-        cursor.execute("SELECT DISTINCT branch, package FROM slice")
+        # filter down to only the supported releases
+        ubuntu_releases = set(
+            release for release in ubuntu_releases if release.supported
+        )
+
+        cursor.execute("""
+            SELECT DISTINCT s.branch, s.package
+            FROM slice s
+            JOIN release r ON s.branch = r.branch
+            WHERE r.supported = 1
+        """)
         packages_by_release: dict[UbuntuRelease, set[str]] = {}
         for branch, package in cursor.fetchall():
             ubuntu_release = UbuntuRelease.from_branch_name(branch)
@@ -423,7 +441,11 @@ def main(args: argparse.Namespace) -> None:
     new_slices_by_pr = _group_new_slices_by_pr(slices_in_head_by_pr, slices_in_base_by_pr)
     grouped_comparisons = _get_grouped_comparisons(prs_by_ubuntu_release, new_slices_by_pr, packages_by_release)
 
-    print_pipe_friendly(format_forward_port_json(grouped_comparisons, new_slices_by_pr, add_extra_info=False))
+    print_pipe_friendly(
+        format_forward_port_json(
+            grouped_comparisons, new_slices_by_pr, add_extra_info=True
+        )
+    )
 
 
 ################################################################################
