@@ -32,7 +32,7 @@ jobs:
         uses: actions/setup-python@v5
         with: { python-version: '3.12' }
 
-      - name: "Determine main branch reference"
+      - name: Determine main branch reference
         id: main-ref
         run: |
           if [[ "${{ github.base_ref }}" == "main" ]]; then
@@ -43,16 +43,14 @@ jobs:
             echo "ref=main" >> $GITHUB_OUTPUT
           fi
 
-      - name: "Checkout main branch scripts"
+      - name: Checkout main branch scripts
         uses: actions/checkout@v6
         with:
           ref: ${{ steps.main-ref.outputs.ref }}
           path: ${{ env.main }}
       
-      - name: "Install dependencies"
-        run: |
-          pip install -r "${{ env.main }}/${{ env.src_dir }}/requirements.txt"
-          sudo apt-get update && sudo apt-get install -y jq
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
       
       #== DOWNLOAD DATA ========================================================
       
@@ -76,10 +74,22 @@ jobs:
           artifact_name: index.db.br
           output_path: data
           token: ${{ secrets.CHISEL_RELEASES_DATA_TOKEN }}
+
+      - name: Download latest wheel
+        uses: ./chisel-releases-data/download
+        # uses: canonical/chisel-releases-data/download@v1.1
+        with:
+          artifact_name: chisel_releases_data-latest.whl
+          output_path: data
+          token: ${{ secrets.CHISEL_RELEASES_DATA_TOKEN }}
+
+      
+      - name: Install chisel-releases-data package
+        run: pip install data/*.whl
       
       #== CHECK FORWARD PORTS ==================================================
 
-      - name: "Check forward porting status"
+      - name: Check forward porting status
         run: |
           set -o pipefail
           ln -s "${{ env.main }}/${{ env.src_dir }}/forward_port_missing.py" .
