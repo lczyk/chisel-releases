@@ -56,7 +56,9 @@ jobs:
           sudo apt-get update && sudo apt-get install -y jq
       
       #== DOWNLOAD DATA ========================================================
-
+      
+      # chisel-releases-data is, for now, a private repository. to use the download action
+      # we need to check out the repository with a token that has access to it
       # https://github.com/actions/checkout/tree/v6/?tab=readme-ov-file#fetch-only-a-single-file
       - name: Checkout the chisel-releases-data action
         uses: actions/checkout@v6
