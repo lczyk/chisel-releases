@@ -5,19 +5,17 @@ import argparse
 import json
 import logging
 import os
-import re
-import subprocess as sub
+import sqlite3
 import sys
-import time
 from collections.abc import Iterable, Mapping
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import total_ordering
 from pathlib import Path
-from typing import Callable, Iterator
+from tempfile import NamedTemporaryFile
+
+import brotli
 
 
-################################################################################
 @total_ordering
 @dataclass(frozen=True, order=False)
 class UbuntuRelease:
@@ -38,13 +36,6 @@ class UbuntuRelease:
         return self.version_tuple < other.version_tuple
 
     @classmethod
-    def from_distro_info_line(cls, line: str) -> UbuntuRelease:
-        match = re.match(r"Ubuntu (\d{1,2}\.\d{2})( LTS)? \"([A-Za-z ]+)\"", line)
-        if not match:
-            raise ValueError(f"Invalid distro-info line: '{line}'")
-        return cls(version=match.group(1), codename=match.group(3))
-
-    @classmethod
     def from_branch_name(cls, branch: str) -> UbuntuRelease:
         assert branch.startswith("ubuntu-"), "Branch name must start with 'ubuntu-'"
         version = branch.split("-", 1)[1]
@@ -53,52 +44,9 @@ class UbuntuRelease:
             raise ValueError(f"Unknown Ubuntu version '{version}' for branch '{branch}'")
         return cls(version=version, codename=codename)
 
-    @property
-    def short_codename(self) -> str:
-        """Return the first word of the codename in lowercase. E.g. 'focal' from 'Focal Fossa'."""
-        return self.codename.split()[0].lower()
 
-    @classmethod
-    def from_dict(cls, data: dict) -> UbuntuRelease:
-        return cls(
-            version=data["version"],
-            codename=data["codename"],
-        )
-
-
-_ALL_RELEASES: set[UbuntuRelease] = set()
+# Will be populated in load_data() and used in UbuntuRelease.from_branch_name()
 _VERSION_TO_CODENAME: dict[str, str] = {}
-SUPPORTED_RELEASES: set[UbuntuRelease] = set()
-_DEVEL_RELEASE: UbuntuRelease | None = None
-
-
-def init_distro_info() -> None:
-    all_output = sub.getoutput("distro-info --all --fullname").strip()
-    supported_output = sub.getoutput("distro-info --supported --fullname").strip()
-    devel_output = sub.getoutput("distro-info --devel --fullname").strip()
-
-    global _ALL_RELEASES, _VERSION_TO_CODENAME, SUPPORTED_RELEASES, _DEVEL_RELEASE
-
-    _ALL_RELEASES = set(UbuntuRelease.from_distro_info_line(line) for line in all_output.splitlines())
-    _VERSION_TO_CODENAME = {release.version: release.codename for release in _ALL_RELEASES}
-
-    SUPPORTED_RELEASES = set(UbuntuRelease.from_distro_info_line(line) for line in supported_output.splitlines())
-    assert SUPPORTED_RELEASES.issubset(_ALL_RELEASES), "Supported releases must be a subset of all releases."
-
-    _DEVEL_RELEASE = UbuntuRelease.from_distro_info_line(devel_output) if devel_output else None
-    assert _DEVEL_RELEASE is None or _DEVEL_RELEASE in _ALL_RELEASES, "Devel release must be in all releases."
-
-
-################################################################################
-
-CHISEL_RELEASES_URL = os.environ.get("CHISEL_RELEASES_URL", "https://github.com/canonical/chisel-releases")
-
-
-@contextmanager
-def timing_context() -> Iterator[Callable[[], float]]:
-    t1 = t2 = time.perf_counter()
-    yield lambda: t2 - t1
-    t2 = time.perf_counter()
 
 
 def print_pipe_friendly(output: str) -> None:
@@ -120,31 +68,6 @@ class Commit:
     ref: str
     repo_name: str
     repo_owner: str
-    repo_url: str
-    sha: str
-
-    @classmethod
-    def from_github_json(cls, data: dict) -> Commit:
-        return Commit(
-            ref=data["ref"],
-            repo_name=data["repo"]["name"],
-            repo_owner=data["repo"]["owner"]["login"],
-            repo_url=data["repo"]["html_url"],
-            sha=data["sha"],
-        )
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Commit:
-        return Commit(
-            ref=data["ref"],
-            repo_name=data["repo_name"],
-            repo_owner=data["repo_owner"],
-            repo_url=data["repo_url"],
-            sha=data["sha"],
-        )
-
-
-FORWARD_PORT_MISSING_LABEL = "forward port missing"
 
 
 @total_ordering
@@ -166,41 +89,6 @@ class PR:
         if not isinstance(other, PR):
             return NotImplemented
         return self.number < other.number
-
-    @classmethod
-    def from_github_json(cls, data: dict) -> PR:
-        has_label = any(label.get("name") == FORWARD_PORT_MISSING_LABEL for label in data["labels"])
-        return PR(
-            number=data["number"],
-            title=data["title"],
-            user=data["user"]["login"],
-            head=Commit.from_github_json(data["head"]),
-            base=Commit.from_github_json(data["base"]),
-            label=has_label,
-            url=data["html_url"],
-        )
-
-    @classmethod
-    def from_dict(cls, data: dict) -> PR:
-        return PR(
-            number=data["number"],
-            title=data["title"],
-            user=data["user"],
-            head=Commit.from_dict(data["head"]),
-            base=Commit.from_dict(data["base"]),
-            label=data["label"],
-            url=data["url"],
-        )
-
-
-def check_github_token() -> None:
-    token = os.getenv("GH_TOKEN", None)
-    if token is not None:
-        logging.debug("GH_TOKEN is set.")
-        if not token.strip():
-            logging.warning("GH_TOKEN is empty.")
-    else:
-        logging.debug("GH_TOKEN is not set.")
 
 
 ################################################################################
@@ -400,8 +288,22 @@ def forward_porting_status(
 
 ################################################################################
 
+FORWARD_PORT_MISSING_LABEL = "forward port missing"
 
-def load_data_from_json(
+
+def check_version_compatibility(conn: sqlite3.Connection) -> None:
+    cursor = conn.cursor()
+    version = cursor.execute("SELECT value FROM meta WHERE key = 'data_scraper_version'").fetchone()
+    version = version[0] if version else None
+    version_tuple: tuple[int, ...] = tuple(map(int, version.lstrip("v").split("."))) if version else (99, 99, 99)
+    if version_tuple < (1, 1, 0) or version_tuple >= (2, 0, 0):
+        raise ValueError(
+            "Data scraper version mismatch: expected version >= 1.1.0 and < 2.0.0, "
+            f"got {version} (parsed as {version_tuple})."
+        )
+
+
+def load_data(
     input_path: Path,
 ) -> tuple[
     frozenset[PR],
@@ -409,47 +311,97 @@ def load_data_from_json(
     Mapping[PR, frozenset[str]],
     Mapping[UbuntuRelease, set[str]],
 ]:
-    """Load PR and package data from JSON file."""
+    """Load data from brotli compressed sqlite db"""
+
     if not input_path.is_file():
         raise FileNotFoundError(f"Input file '{input_path}' does not exist or is not a file.")
 
     logging.info("Loading data from '%s'...", input_path)
 
-    with input_path.open("r") as f:
-        data = json.load(f)
+    compressed_data = input_path.read_bytes()
+    decompressed_data = brotli.decompress(compressed_data)
 
-    assert isinstance(data, dict), "Expected loaded data to be a dict."
-    expected_keys = {"ubuntu_releases", "prs", "packages_by_release"}
-    if set(data.keys()) != expected_keys:
-        raise ValueError(f"Loaded data keys do not match expected keys: {expected_keys}")
+    with NamedTemporaryFile(delete=False, suffix=".db") as tmp:
+        tmp.write(decompressed_data)
+        db_path = tmp.name
 
-    # Reconstruct PRs
-    prs_list = []
-    slices_in_head_by_pr_dict = {}
-    slices_in_base_by_pr_dict = {}
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
 
-    for pr_data in data["prs"]:
-        pr = PR.from_dict(pr_data)
-        prs_list.append(pr)
-        slices_in_head_by_pr_dict[pr] = frozenset(pr_data["slices"]["head"])
-        slices_in_base_by_pr_dict[pr] = frozenset(pr_data["slices"]["base"])
+        check_version_compatibility(conn)
 
-    # Reconstruct packages by release
-    packages_by_release = {}
-    for release_key, packages in data["packages_by_release"].items():
-        # release_key is like "ubuntu-24.04"
-        version = release_key.removeprefix("ubuntu-")
-        # Find matching release from ubuntu_releases
-        matching_release = next((r for r in data["ubuntu_releases"] if r["version"] == version), None)
-        if matching_release:
-            ubuntu_release = UbuntuRelease.from_dict(matching_release)
-            packages_by_release[ubuntu_release] = set(packages)
+        cursor.execute("SELECT version, codename, supported, devel FROM release")
+        ubuntu_releases: list[UbuntuRelease] = [
+            UbuntuRelease(version=row[0], codename=row[1]) for row in cursor.fetchall()
+        ]
 
-    logging.info("Loaded data from '%s'.", input_path)
-    file_size = input_path.stat().st_size
-    logging.info("Input file size: %.2f MiB", file_size / (1024 * 1024))
+        global _VERSION_TO_CODENAME
+        _VERSION_TO_CODENAME = {release.version: release.codename for release in ubuntu_releases}
 
-    return frozenset(prs_list), slices_in_head_by_pr_dict, slices_in_base_by_pr_dict, packages_by_release
+        cursor.execute("SELECT DISTINCT branch, package FROM slice")
+        packages_by_release: dict[UbuntuRelease, set[str]] = {
+            UbuntuRelease.from_branch_name(branch): set() for branch, _ in cursor.fetchall()
+        }
+
+        cursor.execute("SELECT sha, ref, repo_name, repo_owner FROM pr_commits")
+        commits: dict[str, Commit] = {
+            row[0]: Commit(
+                ref=row[1],
+                repo_name=row[2],
+                repo_owner=row[3],
+            )
+            for row in cursor.fetchall()
+        }
+
+        prs_list: list[PR] = []
+        slices_in_head_by_pr_dict: dict[PR, frozenset[str]] = {}
+        slices_in_base_by_pr_dict: dict[PR, frozenset[str]] = {}
+        cursor.execute("SELECT number, title, user, head_sha, base_sha, labels, slices_head, slices_base FROM prs")
+        for row in cursor.fetchall():
+            assert len(row) == 8, f"Expected 8 columns in prs table, got {len(row)}"
+            number: int = row[0]
+            title: str = row[1]
+            user: str = row[2]
+            head_sha: str = row[3]
+            base_sha: str = row[4]
+            labels_json: str = row[5]
+            slices_head_json: str = row[6]
+            slices_base_json: str = row[7]
+
+            # Parse labels
+            labels: set[str] = set(json.loads(labels_json)) if labels_json else set()
+            has_label = FORWARD_PORT_MISSING_LABEL in labels
+
+            # Get commits
+            head_commit = commits.get(head_sha)
+            base_commit = commits.get(base_sha)
+            if not head_commit or not base_commit:
+                logging.warning("Missing commit data for PR #%d", number)
+                continue
+
+            # Create PR
+            pr = PR(
+                number=number,
+                title=title,
+                user=user,
+                head=head_commit,
+                base=base_commit,
+                label=has_label,
+                url=f"https://github.com/canonical/chisel-releases/pull/{number}",
+            )
+
+            prs_list.append(pr)
+
+            slices_in_head_by_pr_dict[pr] = frozenset(json.loads(slices_head_json)) if slices_head_json else frozenset()
+            slices_in_base_by_pr_dict[pr] = frozenset(json.loads(slices_base_json)) if slices_base_json else frozenset()
+
+        conn.close()
+
+        logging.info("Loaded data from '%s'.", input_path)
+        file_size = input_path.stat().st_size
+        logging.info("Input file size: %.2f MiB", file_size / (1024 * 1024))
+
+        return frozenset(prs_list), slices_in_head_by_pr_dict, slices_in_base_by_pr_dict, packages_by_release
 
 
 ## MAIN ########################################################################
@@ -461,7 +413,9 @@ def main(args: argparse.Namespace) -> None:
         slices_in_head_by_pr,
         slices_in_base_by_pr,
         packages_by_release,
-    ) = load_data_from_json(args.input)
+    ) = load_data(args.input)
+
+    # raise NotImplementedError
     ubuntu_releases = sorted(packages_by_release.keys())
 
     prs_by_ubuntu_release = _group_prs_by_ubuntu_release(prs, ubuntu_releases)
@@ -552,10 +506,8 @@ if __name__ == "__main__":
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    init_distro_info()
-    check_github_token()
-
     args = parse_args()
+
     logging.debug("Parsed args: %s", args)
 
     main(args)
