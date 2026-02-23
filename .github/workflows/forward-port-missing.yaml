@@ -5,7 +5,7 @@ name: "Forward port missing"
 
 on:
   schedule:
-    # Run at 1 min past every hour
+    # Run ever hour
     # Ref: https://man7.org/linux/man-pages/man5/crontab.5.html
     - cron: "0 * * * *"
   workflow_dispatch:
@@ -17,8 +17,7 @@ jobs:
     env:
       main: "chisel-releases-main"
       src_dir: ".github/scripts/forward-port-missing"
-      # set the GitHub token to allow the script to add labels to the PR with
-      # the `gh` CLI
+      # set the GitHub token to allow the script to add labels to the PR with the `gh` CLI
       GH_TOKEN: ${{ github.token }} 
   
     # we need write permissions to be able to add labels
