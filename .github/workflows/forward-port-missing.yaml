@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: canonical/chisel-releases-data
-          ref: v1.1
+          ref: v2
           path: chisel-releases-data
           token: ${{ secrets.CHISEL_RELEASES_DATA_TOKEN }}
           sparse-checkout: download/action.yaml
@@ -69,22 +69,15 @@ jobs:
       
       - name: Download latest index.db.br
         uses: ./chisel-releases-data/download
-        # uses: canonical/chisel-releases-data/download@v1.1
+        # uses: canonical/chisel-releases-data/download@v2
         with:
-          artifact_name: index.db.br
+          artifact_names: |
+            - chisel-releases-data
+            - chisel-releases-data-wheel
           output_path: data
           token: ${{ secrets.CHISEL_RELEASES_DATA_TOKEN }}
-
-      - name: Download latest wheel
-        uses: ./chisel-releases-data/download
-        # uses: canonical/chisel-releases-data/download@v1.1
-        with:
-          artifact_name: chisel_releases_data-latest.whl
-          output_path: data
-          token: ${{ secrets.CHISEL_RELEASES_DATA_TOKEN }}
-
       
-      - name: Install chisel-releases-data package
+      - name: Install chisel-releases-data wheel
         run: pip install data/*.whl
       
       #== CHECK FORWARD PORTS ==================================================
@@ -93,7 +86,7 @@ jobs:
         run: |
           set -o pipefail
           ln -s "${{ env.main }}/${{ env.src_dir }}/forward_port_missing.py" .
-          ./forward_port_missing.py data/index.db.br | jq | tee results.json
+          ./forward_port_missing.py data/chisel-releases-data.db.br | jq | tee results.json
       
       - name: Upload results
         uses: actions/upload-artifact@v6
