@@ -53,7 +53,7 @@ def _geturl_github(url: str, params: dict[str, str | int] | None = None) -> requ
     url = url.replace("github.com", "api.github.com/repos") if "api.github.com" not in url else url
     url = url.rstrip("/")
     headers = {"Accept": "application/vnd.github.v3+json", "X-GitHub-Api-Version": "2022-11-28"}
-    github_token = os.getenv("GITHUB_TOKEN", None)
+    github_token = os.getenv("GITHUB_TOKEN")
     if github_token:
         headers["Authorization"] = f"Bearer {github_token}"
 
