@@ -27,12 +27,12 @@ jobs:
         id: check-skip
         run: |
           DEVEL=$(distro-info --devel --release | cut -d' ' -f1)
+          should_skip=false
           if [[ "${{ github.base_ref }}" == "ubuntu-$DEVEL" ]]; then
-            echo "should_skip=true" >> $GITHUB_OUTPUT
-            echo "Skipping workflow as PR is against devel branch ubuntu-$DEVEL"
-          else
-            echo "should_skip=false" >> $GITHUB_OUTPUT
+             echo "Skipping workflow as PR is against devel branch ubuntu-$DEVEL"
+            should_skip=true
           fi
+          echo "should_skip=$should_skip" >> $GITHUB_OUTPUT
 
       - name: "Set reference to main branch"
         if: steps.check-skip.outputs.should_skip != 'true'
