@@ -404,7 +404,6 @@ slices:
       /etc/apparmor.d/who:
       /etc/apparmor.d/wike:
       /etc/apparmor.d/wpcom:
-      /etc/apparmor.d/znc:
         text: |
           # This file is auto-generated. It is recommended you update it using:
           # $ sudo dpkg-reconfigure apparmor
