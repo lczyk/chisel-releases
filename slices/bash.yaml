@@ -24,7 +24,7 @@ slices:
 
   scripts:
     essential:
-      - bash_bashbug
+      bash_bashbug:
 
   # bashbug is a script to send bug reports to the bash maintainers.
   # in addition to stated essentials, it required $EDITOR to be set,
@@ -32,18 +32,18 @@ slices:
   # in order: /usr/lib/sendmail, /usr/sbin/sendmail, or rmail
   bashbug:
     essential:
-      - base-files_bin
-      - base-files_tmp
-      - coreutils_cat
-      - coreutils_chmod
-      - coreutils_cp-utility
-      - coreutils_mkdir
-      - coreutils_sleep
-      - coreutils_uname
-      - dash_bins
-      - diffutils_cmp
-      - grep_bins
-      - sed_bins
+      base-files_bin:
+      base-files_tmp:
+      coreutils_cat:
+      coreutils_chmod:
+      coreutils_cp-utility:
+      coreutils_mkdir:
+      coreutils_sleep:
+      coreutils_uname:
+      dash_bins:
+      diffutils_cmp:
+      grep_bins:
+      sed_bins:
     contents:
       /usr/bin/bashbug:
 
