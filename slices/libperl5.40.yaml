@@ -149,27 +149,27 @@ slices:
 
   devel:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
-      - perl-modules-5.40_devel
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
+      perl-modules-5.40_devel:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Devel/**.pm:
 
   digest:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
-      - perl-modules-5.40_digest
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
+      perl-modules-5.40_digest:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Digest/**.pm:
 
   encodings:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Encode.pm:
       /usr/lib/*-linux-*/perl/5.40*/Encode/**.pm:
@@ -178,18 +178,18 @@ slices:
 
   error-handling:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Errno.pm:
       /usr/lib/*-linux-*/perl/5.40*/errno.ph:
 
   file-handling:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Cwd.pm:
       /usr/lib/*-linux-*/perl/5.40*/Fcntl.pm:
@@ -198,10 +198,10 @@ slices:
 
   filters:
     essential:
-      - libc6_libs
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libc6_libs:
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Filter/**.pm:
 
@@ -211,17 +211,17 @@ slices:
 
   hashing:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Hash/**.pm:
 
   io-modules:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/IO.pm:
       /usr/lib/*-linux-*/perl/5.40*/IO/**.pm:
@@ -233,41 +233,41 @@ slices:
 
   loaders:
     essential:
-      - libc6_libs
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libc6_libs:
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/DynaLoader.pm:
       /usr/lib/*-linux-*/perl/5.40*/auto/**.so:
 
   i18n:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/I18N/**.pm:
 
   machine:
     essential:
-      - libperl5.40_libs
+      libperl5.40_libs:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/machine/:
 
   math:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Math/**.pm:
 
   module-utils:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Sub/**.pm:
       /usr/lib/*-linux-*/perl/5.40*/attributes.pm:
@@ -278,9 +278,9 @@ slices:
 
   networking:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/IPC/**.pm:
       /usr/lib/*-linux-*/perl/5.40*/Socket.pm:
@@ -296,9 +296,9 @@ slices:
 
   system-utils:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/POSIX.pm:
       /usr/lib/*-linux-*/perl/5.40*/POSIX.pod:
@@ -311,9 +311,9 @@ slices:
 
   text-processing:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/MIME/**.pm:
       /usr/lib/*-linux-*/perl/5.40*/Unicode/**.pm:
@@ -321,18 +321,18 @@ slices:
 
   threading:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/threads.pm:
       /usr/lib/*-linux-*/perl/5.40*/threads/**.pm:
 
   time:
     essential:
-      - libperl5.40_libs
-      - perl-base_modules
-      - perl-modules-5.40_core
+      libperl5.40_libs:
+      perl-base_modules:
+      perl-modules-5.40_core:
     contents:
       /usr/lib/*-linux-*/perl/5.40*/Time/**.pm:
 
