@@ -1,17 +1,17 @@
 package: apparmor
 
 essential:
-  - apparmor_copyright
+  apparmor_copyright:
 
 slices:
   # Also relies on debconf, however it is solely used by install hook
   # to determine if any non default homedir has been configured.
   bins:
     essential:
-      - apparmor_config
-      - apparmor_parser
-      - apparmor_profiles
-      - libc6_libs
+      apparmor_config:
+      apparmor_parser:
+      apparmor_profiles:
+      libc6_libs:
     contents:
       /usr/bin/aa-enabled:
       /usr/bin/aa-exec:
@@ -22,31 +22,31 @@ slices:
 
   parser:
     essential:
-      - libc6_libs
+      libc6_libs:
     contents:
       /usr/sbin/apparmor_parser:
 
   scripts:
     essential:
-      - apparmor_parser
-      - apparmor_systemd
-      - base-files_bin
-      - coreutils_sort
-      - dash_bins
-      - gawk_bins
+      apparmor_parser:
+      apparmor_systemd:
+      base-files_bin:
+      coreutils_sort:
+      dash_bins:
+      gawk_bins:
     contents:
       /usr/sbin/aa-remove-unknown:
       /usr/sbin/aa-teardown:
 
   systemd:
     essential:
-      - coreutils_cat
-      - coreutils_ls-utility
-      - coreutils_sort
-      - grep_bins
-      - procps_sysctl
-      - sed_bins
-      - systemd_detect-virt
+      coreutils_cat:
+      coreutils_ls-utility:
+      coreutils_sort:
+      grep_bins:
+      procps_sysctl:
+      sed_bins:
+      systemd_detect-virt:
     contents:
       /usr/lib/apparmor/apparmor.systemd:
       /usr/lib/apparmor/profile-load:
