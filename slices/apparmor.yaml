@@ -71,9 +71,12 @@ slices:
       /etc/apparmor.d/Xorg:
       /etc/apparmor.d/abi/3.0:
       /etc/apparmor.d/abi/4.0:
+      /etc/apparmor.d/abi/4.0-ip:
+      /etc/apparmor.d/abi/5.0:
       /etc/apparmor.d/abi/kernel-5.4-outoftree-network:
       /etc/apparmor.d/abi/kernel-5.4-vanilla:
       /etc/apparmor.d/abstractions/X:
+      /etc/apparmor.d/abstractions/authd:
       /etc/apparmor.d/abstractions/apache2-common:
       /etc/apparmor.d/abstractions/apparmor_api/change_profile:
       /etc/apparmor.d/abstractions/apparmor_api/examine:
@@ -112,6 +115,7 @@ slices:
       /etc/apparmor.d/abstractions/gio-open:
       /etc/apparmor.d/abstractions/gnome:
       /etc/apparmor.d/abstractions/gnupg:
+      /etc/apparmor.d/abstractions/golang:
       /etc/apparmor.d/abstractions/groff:
       /etc/apparmor.d/abstractions/gtk:
       /etc/apparmor.d/abstractions/gvfs-open:
@@ -143,6 +147,7 @@ slices:
       /etc/apparmor.d/abstractions/opencl-mesa:
       /etc/apparmor.d/abstractions/opencl-nvidia:
       /etc/apparmor.d/abstractions/opencl-pocl:
+      /etc/apparmor.d/abstractions/opengl:
       /etc/apparmor.d/abstractions/openssl:
       /etc/apparmor.d/abstractions/orbit2:
       /etc/apparmor.d/abstractions/p11-kit:
@@ -361,6 +366,7 @@ slices:
       /etc/apparmor.d/tunables/system:
       /etc/apparmor.d/tunables/xdg-user-dirs:
       /etc/apparmor.d/tunables/xdg-user-dirs.d/site.local:
+      /etc/apparmor.d/znc:
         text: |
           # ------------------------------------------------------------------
           #
