@@ -255,15 +255,15 @@ slices:
 
   uname:
     essential:
-      - coreutils-from-gnu_uname
+      coreutils-from-gnu_uname:
 
   sleep:
     essential:
-      - coreutils-from-gnu_sleep
+      coreutils-from-gnu_sleep:
 
   cp-utility:
     essential:
-      - coreutils-from-gnu_cp-utility
+      coreutils-from-gnu_cp-utility:
 
   wc-utility:
     essential:
