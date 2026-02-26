@@ -76,7 +76,6 @@ slices:
       /etc/apparmor.d/abi/kernel-5.4-outoftree-network:
       /etc/apparmor.d/abi/kernel-5.4-vanilla:
       /etc/apparmor.d/abstractions/X:
-      /etc/apparmor.d/abstractions/authd:
       /etc/apparmor.d/abstractions/apache2-common:
       /etc/apparmor.d/abstractions/apparmor_api/change_profile:
       /etc/apparmor.d/abstractions/apparmor_api/examine:
@@ -85,6 +84,7 @@ slices:
       /etc/apparmor.d/abstractions/apparmor_api/is_enabled:
       /etc/apparmor.d/abstractions/aspell:
       /etc/apparmor.d/abstractions/audio:
+      /etc/apparmor.d/abstractions/authd:
       /etc/apparmor.d/abstractions/authentication:
       /etc/apparmor.d/abstractions/base:
       /etc/apparmor.d/abstractions/bash:
@@ -365,7 +365,6 @@ slices:
       /etc/apparmor.d/tunables/sys:
       /etc/apparmor.d/tunables/system:
       /etc/apparmor.d/tunables/xdg-user-dirs:
-      /etc/apparmor.d/tunables/xdg-user-dirs.d/site.local:
       /etc/apparmor.d/znc:
         text: |
           # ------------------------------------------------------------------
