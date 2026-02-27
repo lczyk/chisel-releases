@@ -58,7 +58,7 @@ function chisel_cut() {
             --release "$PROJECT_PATH" \
             --root "$rootfs" \
             $slices \
-            2>&1 | tee "$output"
+            2>&1 | tee "$output" >&2
         [[ "${PIPESTATUS[0]}" -eq 0 ]] && break
 
         local matched=""
