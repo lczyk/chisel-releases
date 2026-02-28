@@ -28,29 +28,17 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
         with: { python-version: '3.12' }
-
-      - name: Install dependencies
-        run: |
-          pip install -r "${{ env.script }}/requirements.txt"
-          sudo apt-get update && sudo apt-get install -y distro-info jq
       
-      - name: Gather data about PRs and slices
+      - name: Check forward porting status
         env:
           # we authenticate ourselves with the actions token to avoid hitting the unauthenticated rate limit
           GITHUB_TOKEN: ${{ github.token }}
-        run: ${{ env.script }}/chisel_releases_data.py --jobs=-1 1> data.json
-
-      - name: Check forward porting status
-        run: ${{ env.script }}/forward_port_missing.py data.json | jq > results.json
+        run: ${{ env.script }}/forward_port_missing.py data.json | tee results.txt
       
-      - name: Upload results
-        uses: actions/upload-artifact@v6
-        with: { name: forward-port-missing-results, path: results.json }
-
       - name: Apply labels
         env:
           # we need the token to edit labels
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           ln -s "${{ env.script }}/apply_pr_labels.sh" .
-          ./apply_pr_labels.sh results.json
+          ./apply_pr_labels.sh results.txt

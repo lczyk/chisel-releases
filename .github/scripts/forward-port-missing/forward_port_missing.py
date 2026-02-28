@@ -32,7 +32,6 @@ from html.parser import HTMLParser
 from contextlib import contextmanager
 import time
 from typing import Iterator, Callable
-import json
 
 from diff_parser import Diff
 import requests
@@ -40,9 +39,10 @@ import yaml
 
 # For dev you can use requests-cache to cache the
 # GitHub API responses and avoid hitting rate limits:
-#
-# import requests_cache
-# requests_cache.install_cache("requests_cache")
+
+import requests_cache
+
+requests_cache.install_cache("requests_cache")
 
 FORWARD_PORT_MISSING_LABEL = "forward port missing"
 
@@ -388,6 +388,8 @@ def determine_forward_porting_status(
                 warn(f"#{pr.number}: has fp but has label")
                 to_remove_label.add(pr.number)
 
+    assert to_add_label.isdisjoint(to_remove_label), "PR cannot be in both sets"
+
     return to_add_label, to_remove_label
 
 
@@ -402,13 +404,8 @@ def main() -> None:
         packages_by_release=packages_by_release,
     )
 
-    out = json.dumps(
-        {
-            "add_label": sorted(to_add_label),
-            "remove_label": sorted(to_remove_label),
-        }
-    )
-    print(out)
+    print("add:", ",".join(map(str, sorted(to_add_label))))
+    print("remove:", ",".join(map(str, sorted(to_remove_label))))
 
 
 if __name__ == "__main__":
