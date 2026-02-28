@@ -29,6 +29,9 @@ jobs:
         uses: actions/setup-python@v6
         with: { python-version: '3.12' }
       
+      - name: Install dependencies
+        run: pip install -r ${{ env.script }}/requirements.txt
+      
       - name: Check forward porting status
         env:
           # we authenticate ourselves with the actions token to avoid hitting the unauthenticated rate limit
