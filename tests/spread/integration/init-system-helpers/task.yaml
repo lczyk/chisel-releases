@@ -4,5 +4,6 @@ variants:
     - deb-systemd-helper
     - deb-systemd-invoke
     - invoke-rc-d
+    - service
 
 execute: bash -ex ./test_${SPREAD_VARIANT}.sh
