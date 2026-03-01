@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spellchecker: ignore rootfs 
+# spellchecker: ignore rootfs  maintscripts MAINTSCRIPT testalias
 
 rootfs="$(install-slices init-system-helpers_deb-systemd-helper)"
 
@@ -11,8 +11,7 @@ mkdir -p "$rootfs/dev" && touch "$rootfs/dev/null"  # needed for masking/unmaski
 chroot "$rootfs" deb-systemd-helper --foo 2>&1 || true | \
     grep -q "/usr/bin/deb-systemd-helper is a program which should be called by dpkg maintscripts only."
 
-
-# Set up environment as if called from dpkg
+# set env var as if called from dpkg
 export DPKG_MAINTSCRIPT_PACKAGE=test
 
 # test missing unit file

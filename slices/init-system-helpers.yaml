@@ -12,13 +12,18 @@ slices:
   #     /usr/sbin/service:
   #     /usr/sbin/update-rc.d:
 
+  scripts:
+    essential:
+      init-system-helpers_deb-systemd-helper:
+      init-system-helpers_deb-systemd-invoke:
+
   deb-systemd-helper:
     essential:
       perl-base_bins:
       perl-base_modules:
     contents:
       /usr/bin/deb-systemd-helper:
-  
+
   deb-systemd-invoke:
     essential:
       base-files_bin:
@@ -28,6 +33,20 @@ slices:
       systemd_bins:
     contents:
       /usr/bin/deb-systemd-invoke:
+
+  invoke-rc-d:
+    essential:
+      base-files_bin:
+      dash_bins:
+      sed_bins:
+      findutils_xargs:
+      procps_ps-bin:
+      coreutils_ls-utility:
+      coreutils_cat:
+      coreutils_basename:
+      grep_bins:
+    contents:
+      /usr/sbin/invoke-rc.d:
 
   config:
     contents:
