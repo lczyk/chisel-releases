@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# spellchecker: ignore rootfs initscript runlevel
+# spellchecker: ignore rootfs
 
 rootfs="$(install-slices init-system-helpers_service)"
 
-# Usage: service < option > | --status-all | [ service_name [ command | --full-restart ] ]
 chroot "$rootfs" /usr/sbin/service --help 2>&1 | grep -q "Usage: service"
-chroot "$rootfs" /usr/sbin/service --version
+chroot "$rootfs" /usr/sbin/service --version 2>&1 | grep -q "service ver."
 
 # Status without any services
 mkdir -p "$rootfs/etc/init.d"
