@@ -64,8 +64,8 @@ slices:
   routel:
     essential:
       coreutils_env:
-      python3_core:
       iproute2_ip-bin:
+      python3_core:
     contents:
       /usr/bin/routel:
 
