@@ -1,10 +1,7 @@
 summary: Integration tests for iproute2
 
 variants:
-    - dump
-    - hello
-    - help_and_version
-    - print
-    - std
+    - routel
+    - ip
 
 execute: bash -ex ./test_${SPREAD_VARIANT}.sh
