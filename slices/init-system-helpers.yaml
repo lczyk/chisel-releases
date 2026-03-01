@@ -50,12 +50,12 @@ slices:
       base-files_bin:
       coreutils_basename:
       coreutils_cat:
+      coreutils_env:
       coreutils_ln-utility:
       coreutils_rm-utility:
-      coreutils_env:
       dash_bins:
-      sed_bins:
       grep_bins:
+      sed_bins:
       systemd_bins:
     contents:
       /usr/sbin/service:
@@ -64,9 +64,9 @@ slices:
     essential:
       base-files_bin:
       dash_bins:
+      init-system-helpers_config:
       perl-base_bins:
       perl-base_modules:
-      init-system-helpers_config:
       systemd_bins:
     contents:
       /usr/sbin/update-rc.d:
