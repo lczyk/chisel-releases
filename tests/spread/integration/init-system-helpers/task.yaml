@@ -2,5 +2,6 @@ summary: Integration tests for init-system-helpers
 
 variants:
     - deb-systemd-helper
+    - deb-systemd-invoke
 
 execute: bash -ex ./test_${SPREAD_VARIANT}.sh

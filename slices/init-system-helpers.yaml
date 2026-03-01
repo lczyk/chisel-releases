@@ -18,6 +18,16 @@ slices:
       perl-base_modules:
     contents:
       /usr/bin/deb-systemd-helper:
+  
+  deb-systemd-invoke:
+    essential:
+      base-files_bin:
+      dash_bins:
+      perl-base_bins:
+      perl-base_modules:
+      systemd_bins:
+    contents:
+      /usr/bin/deb-systemd-invoke:
 
   config:
     contents:
