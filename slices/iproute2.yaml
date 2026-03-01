@@ -26,7 +26,6 @@ slices:
       /usr/bin/routel:
       /usr/bin/rtstat:
       /usr/bin/ss:
-      /usr/include/iproute2/bpf_elf.h:
       /usr/sbin/arpd:
       /usr/sbin/bridge:
       /usr/sbin/dcb:
@@ -40,6 +39,10 @@ slices:
       /usr/sbin/tc:
       /usr/sbin/tipc:
       /usr/sbin/vdpa:
+
+  headers:
+    contents:
+      /usr/include/iproute2/bpf_elf.h:
 
   config:
     # Corresponds to the pkg's conffiles
