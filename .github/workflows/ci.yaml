@@ -28,3 +28,8 @@ jobs:
   removed-slices:
     name: Removed slices
     uses: lczyk/chisel-releases/.github/workflows/removed-slices.yaml@main
+  
+  pkg-deps:
+    name: Package dependencies
+    uses: lczyk/chisel-releases/.github/workflows/pkg-deps.yaml@main
+
