@@ -61,4 +61,11 @@ jobs:
           # the old git ref.
           # For push events, the github.event.before value contains the SHA of
           # the most recent commit on ref before the push.
-          ./removed-slices "${{ github.event.pull_request.base.sha || github.event.before }}"
+          ./removed-slices "${{ github.event.pull_request.base.sha || github.event.before }}" > removed-slices-comment.md || true
+
+      - name: Upload comment to PR
+        if: ${{ github.event.pull_request }}
+        uses: canonical/chisel-releases/.github/actions/upload-pr-comment@main
+        with:
+          message-path: removed-slices-comment.md
+          message-id: removed-slices
