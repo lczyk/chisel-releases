@@ -223,10 +223,64 @@ slices:
 ### addressing & conventions
 
 - **`<pkg>_<slice>` is the canonical full identifier** -- e.g. `bash_bins`, `libc6_libs`. used in `essential:` cross-references and as cli args to `chisel cut`.
-- **`copyright` slice convention** -- nearly every package has one; pulls `/usr/share/doc/<pkg>/copyright`. listed in the file-level `essential:` block so every other slice transitively ships it. **every slice that delivers functionality must ship copyright** -- not optional.
+- **`copyright` slice convention** -- nearly every package has one; pulls `/usr/share/doc/<pkg>/copyright` (the deb-shipped copyright). listed in the file-level `essential:` so every other slice transitively ships it. **upstream `LICENSE.txt` / `NOTICE` / `ThirdPartyNotices.txt` are not the same thing** -- they belong in a separate `license:` (or `notice:`) slice that itself depends on `<pkg>_copyright`.
 - **filename rule** -- `slices/<pkg>.yaml` with `<pkg>` exactly matching the `package:` field. ci enforces this implicitly via several scripts.
-- **path sort rule** -- entries inside `contents:` must be lexicographically sorted; reviewers will reject unsorted blocks.
+- **path sort rule** -- entries inside `contents:` must be lexicographically (bytewise ascii) sorted. reviewers reject unsorted blocks. occasional false-positives if a path embeds a non-ascii or odd character; check carefully.
 - **slice design approaches** -- two valid styles per chisel docs: group by content type (`bins`, `config`, `libs`) or group by functional use case. pick one per package; don't mix arbitrarily.
+
+### canonical slice names (strong reviewer preference)
+
+slice names are convention, not enforced -- but reviewers re-classify aggressively. use these:
+
+- `bins` -- executables (note plural; never `bin`).
+- `libs` -- shared libraries (plural; never `lib`).
+- `headers` -- `/usr/include/...` files.
+- `config` / `configs` -- conf files. break up large `config` slices into `<purpose>-config`: `modprobe-config`, `tmpfiles-config`, `pam-config`, `kernel-parameters`, `system-users`.
+- `scripts` -- shell helpers / non-binary executables. don't park them in `bins`.
+- `data` -- static data (locales, templates, fonts).
+- `jars` -- jvm artefacts.
+- `copyright` -- the deb copyright file.
+- `license` / `notice` -- upstream licence/notice (not deb copyright).
+- `core` -- minimum-functional subset. **not "everything"**. avoid `all` (rejected as ambiguous).
+- `standard` -- fuller-featured set above `core` (python-style naming).
+- when a deb already names something `<pkg>-core` (e.g. `git-core`), keep that name verbatim in the slice rather than renaming to `core`.
+
+### dependency rules
+
+- **stay true to the deb's declared deps.** even if a transitive pull-in would cover it, list each direct apt `Depends:` as an `essential:` entry. reviewers cross-check via `pkg-deps` ci output.
+- **`Depends:` only -- not `Recommends:` or `Suggests:`.** including `Recommends:` packages as essentials is rejected.
+- **maintainer postinst scripts are not mirrored automatically.** if upstream's postinst would invoke another package's tool (e.g. `update-mime-database`), you must either drop the dep or write the equivalent `mutate:` script. just listing the dep without replicating the side-effect is wrong.
+- **slice in support of a known need, not speculatively.** "general rule: only create the slices we need". hypothetical / future-proof slices get rejected.
+- **published slices are append-only in spirit.** removing files from an existing slice is a regression -- create a new variant slice (e.g. `<existing>-only`, or a stricter `core`) instead.
+- **slice definitions stay use-case-agnostic.** comments like _"this slice exists for app X"_ get rejected. describe what it ships, not why a consumer wants it.
+
+### path entry style nits
+
+- **multiarch lib glob is `*-linux-*`**, not the explicit triple. e.g. `/usr/lib/*-linux-*/libnghttp2.so.14*:`. covers `x86_64-linux-gnu`, `aarch64-linux-gnu`, etc. uniformly.
+- **drop trailing `*` when only one version exists** -- `libfoo.so.1:` not `libfoo.so.1*:`.
+- **don't add explicit `symlink:` if the deb already ships the symlink.** chisel preserves deb-provided links automatically; manual `symlink:` is for paths the deb does _not_ ship.
+- **annotate explicit symlinks with a comment** showing the target: `/usr/bin/dotnet:  # Symlink to ../lib/dotnet/dotnet`.
+- **inline-style for short single-key options**: `/path: {arch: [amd64, arm64]}` rather than a multi-line block.
+- **arch list formatting is rigid**: lowercase, alphabetical, no inner spaces inside the brackets. `[amd64, arm64, ppc64el, riscv64, s390x]` (yes -- single space after commas, no padding). `[ amd64, ... s390x ]` is rejected.
+
+### `mutate:` -- common mistakes
+
+- **mutate is for merging / transforming files that already exist**, not for synthesis. if a binary needs file `F`, ship `F` from the deb; don't try to construct it via `content.write`.
+- **mutate runs once after the entire install set is in place**, not per slice. don't write a mutate that assumes execution order across slices.
+- **`until: mutate` collisions**: if a file is needed during mutate _and_ at runtime, you can't drop it. either two paths (one transient, one persistent) or restructure the slice.
+
+### `v3-essential:` (v3+ only)
+
+v3 adds a parallel `v3-essential:` map alongside the regular `essential:` list. used for arch-gated cross-package deps:
+
+```yaml
+v3-essential:
+  dotnet-sdk-aot-10.0_libs: {arch: [amd64, arm64]}
+```
+
+regular `essential:` still takes a flat list of `<pkg>_<slice>` strings. only `v3-essential:` accepts per-entry options (currently just `arch:`).
+
+historical chisel bug: malformed entries in `essential:` (e.g. typoed slice id) used to be silently dropped. patched in upstream chisel; older chisel versions running against new releases may misbehave.
 
 ## chisel cli (consumer side)
 
@@ -272,7 +326,7 @@ these are non-negotiable; ci and reviewers enforce them.
 1. **branch off the target release branch, not `main`.** prs into `main` are wrong. target `ubuntu-XX.XX`. mentioned explicitly in `CONTRIBUTING.md`.
 2. **forward-port to every newer live release.** if you change `ubuntu-22.04`, you must also open a pr (or pr chain) into `ubuntu-24.04`, `ubuntu-25.10`, `ubuntu-26.04` -- every live (non-eol) release newer than the target. ci has `forward-port-missing` workflow that auto-labels prs missing this. exception: the slice's package no longer exists in the newer release's archive (then the missing port is intentional and is auto-ignored).
 3. **conventional commits.** prefixes: `feat:`, `fix:`, `test:`, `ci:`, `chore:`, `docs:`, `refactor:`. scope optional in parens. examples in `CONTRIBUTING.md`. subject lowercase, no trailing period, imperative mood, <=50 chars; body wrapped at 72.
-4. **two maintainer approvals required to merge.** dont expect a single approval to be enough.
+4. **two maintainer approvals required to merge** -- with one practical exception: trivial forward-port pr's into devel branches (pure cherry-picks of already-approved breaking changes) sometimes land on a single approval. don't rely on it for substantive prs.
 5. **green ci required.** maintainers wont review until checks are green.
 6. **be holistic, not piecemeal.** one pr should be one cohesive contribution. multiple uncorrelated slice changes -> separate prs.
 7. **do not force-push after receiving review comments.** merge in target branch updates if needed.
@@ -297,6 +351,15 @@ short summary -- enough for an agent to know what each fails for and where to lo
 | `pr-comments.yaml` | post pr comments based on uploaded artifacts (e.g. coverage, pkg-deps) | n/a -- it's just the messenger |
 | `triage-prs.yaml` | scheduled label/triage automation | n/a |
 
+### bot accounts
+
+- **`github-actions[bot]`** posts pkg-deps diffs and coverage summaries on prs. reuses `mshick/add-pr-comment` with html-comment markers like `<!-- add-pr-comment:pkg-deps -->` to upsert its own comments instead of spamming.
+- **`Copilot`** auto-reviews are noisy: regularly suggests rejected formatting (e.g. inner spaces in arch lists, `: {}` on essentials). reviewers and contributors generally ignore the false-positives.
+
+### `pull_request_target` / fork-pr security
+
+`pkg-deps` runs under `pull_request_target` (needed to comment on fork prs). this repo has no secrets so the attack surface is small, but the spread workflow uses an artifact + separate trusted comment-poster split to avoid running fork code with elevated privileges. relevant context if extending any workflow that needs to comment back on a fork pr.
+
 scripts feeding these workflows live in `.github/scripts/`:
 
 - `forward-port-missing/forward_port_missing.py` -- python; queries github api for prs, fetches `Packages.gz` from `archive.ubuntu.com`, decides which prs need the `forward port missing` label.
@@ -316,6 +379,40 @@ agents debugging "does package X exist in release Y?" should know:
 - **`rmadison <pkg>`** (devscripts) -- queries launchpad. lower volume, per-pkg.
 - which to use is convention drift; the http scrape is the more portable choice and what fp-missing uses.
 
+## labels
+
+repo-level labels and what they mean (from `gh api repos/.../labels`):
+
+| label | meaning |
+|---|---|
+| `Blocked` | waiting for something external (closest thing to "do not merge") |
+| `bug` | something isn't working |
+| `decaying` | stale; close or act on it |
+| `documentation` | docs change |
+| `duplicate` | already exists |
+| `enhancement` | new feature/request |
+| `forward port missing` | auto-applied by ci when newer release lacks the port |
+| `good first issue` | newcomer-friendly |
+| `help wanted` | extra attention needed |
+| `invalid` | doesn't seem right |
+| `Priority` | look at me first |
+| `question` | needs more info |
+| `ready to merge` | terminal label, used for triage |
+| `wontfix` | will not be worked on |
+
+no explicit "do not merge" label exists; `Blocked` is the closest.
+
+## reviewers
+
+- review team: [`@canonical/slice-reviewers-guild`](https://github.com/orgs/canonical/teams/slice-reviewers-guild). public; ping when a pr has been waiting.
+- recurring approvers (as of writing): cjdcordeiro (de-facto lead), rebornplusplus, zhijie-yang, alesancor1, upils, lczyk, lengau, Meulengracht, linostar, clay-lake.
+
+## multiarch quirks an agent will hit
+
+- **`binutils-common` is per-arch** despite `Architecture: all`-looking contents -- a deb metadata oddity. don't assume one slice file covers all arches.
+- **cross-toolchain packages** (`<tool>-<triple>-linux-gnu`, e.g. `binutils-aarch64-linux-gnu`) ship the prefixed binaries (`aarch64-linux-gnu-ld`). the unprefixed symlinks (`/usr/bin/ld -> aarch64-linux-gnu-ld`) are **not** in the cross deb -- consumers must create them. convention: arch-specific sdfs leave them out; the top-level `binutils` sdf carries the unprefixed name with a `# -> ${ARCH_TRIPLET}-ld` comment.
+- **`/proc/self/exe` linker workaround** for chroot-based java tests lives in `tests/spread/lib/link-proc`. needed because chroot breaks `/proc/self/exe` resolution.
+
 ## testing model
 
 local testing of a slice change:
@@ -332,6 +429,13 @@ repo-level integration tests live in `tests/spread/integration/<pkg>/`. each has
 
 these run under spread with an lxd backend (see `spread.yaml`). spawned with ephemeral `ubuntu:<release>` containers. **agents should not run spread locally without lxd configured** -- it allocates cloud-style resources via lxc.
 
+testing rules from review history:
+
+- **every binary in a `bins` slice must be exercised in spread.** "please test every binary being delivered by that slice" is a recurring rejection.
+- **untestable means unshippable.** if a slice can't be properly tested, reviewers will push to drop it rather than ship it untested.
+- **80%-ish coverage is the soft target** in pr coverage comments. not a hard gate but watched.
+- **spread runs against `distro-info --latest`** for newest release; sometimes the lxd image lags the announcement -- there's a fallback to `ubuntu-daily:` channel ([pr#1001](https://github.com/canonical/chisel-releases/pull/1001)).
+
 ## assumptions / gotchas an agent should internalise
 
 - **never commit on `main`.** slice work is on release branches. `main` only takes ci/docs commits.
@@ -347,7 +451,11 @@ these run under spread with an lxd backend (see `spread.yaml`). spawned with eph
 - **starlark, not python**: mutate scripts use starlark. no imports, no exceptions, restricted stdlib. only `content.list/read/write` for fs interaction.
 - **path sort matters**: lexicographic order in `contents:` blocks is enforced socially by reviewers. resort before pushing.
 - **`copyright` is mandatory for functional slices**: every functional slice must carry copyright (typically via the file-level `essential:` -> `<pkg>_copyright`).
-- **forward-port chain order**: oldest -> newest. e.g. land in `ubuntu-24.04`, then port to `25.10`, then `26.04`. cross-link the prs in descriptions.
+- **forward-port chain order**: oldest -> newest. e.g. land in `ubuntu-24.04`, then port to `25.10`, then `26.04`. cross-link the prs in descriptions. mark non-forward-port prs with `### Forward porting\nn/a` in the description.
+- **slice rename across releases** (e.g. `bins` -> `scripts` in `sensible-utils`/`ucf`) lands as a chain: breaking pr in oldest target, then trivial fastforward prs into newer branches with `n/a` forward-port marker. those fastforwards may merge with one approval.
+- **versioned soname packages** (e.g. `librocksdb9.11`) get deleted when upstream rolls to a new soname (`librocksdb10`). `removed-slices` ci should ignore the deletion if the old package is no longer in the archive (this is the open issue at [#1000](https://github.com/canonical/chisel-releases/issues/1000)).
+- **`Slice Reviewers Guild` team is the review channel.** ping `@canonical/slice-reviewers-guild` when a pr has stalled.
+- **don't trust copilot review suggestions blindly** -- it frequently proposes patterns that are explicitly rejected by maintainers (arch-list spacing, `: {}` essentials).
 
 ## quick repro commands
 
