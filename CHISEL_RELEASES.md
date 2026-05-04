@@ -63,76 +63,22 @@ README.md, CONTRIBUTING.md
 
 `main` only carries `.github/`, `README.md`, `CONTRIBUTING.md`. when working in this repo, **always check which branch you're on first** -- a checkout of `main` will have no slices.
 
-## `chisel.yaml` -- release manifest
+## `chisel.yaml` (release manifest)
 
-### schema format versions
+agents rarely edit this -- but you read it to know which schema features are available on the branch you're targeting.
 
-- **v1** -- legacy. branches: `ubuntu-20.04`, `ubuntu-22.04`, `ubuntu-24.04`. uses `archives:` for the default ubuntu archive and a separate `v2-archives:` block for ubuntu pro / esm archives.
-- **v2** -- requires chisel >= `v1.2.0`. branches: `ubuntu-25.10`. unifies pro archives under a single `archives:` block via a `pro:` subkey. `maintenance.standard` + `maintenance.end-of-life` required.
-- **v3** -- requires chisel >= `v1.4.0`. branches: `ubuntu-26.04`. adds slice `hint:` field (see sdf section).
+schema versions:
 
-an agent reading a release manifest should branch on the `format:` line first.
+- **v1** -- `ubuntu-20.04`, `-22.04`, `-24.04`. has separate `v2-archives:` block for pro/esm archives.
+- **v2** -- `ubuntu-25.10`. requires chisel >= `v1.2.0`. pro archives unified under `archives:` via `pro:` subkey. adds `prefer:` content option.
+- **v3** -- `ubuntu-26.04`. requires chisel >= `v1.4.0`. adds `hint:` field on slices and `v3-essential:` block.
 
-### top-level keys
+key fields you'll consult:
 
-- `format` -- string, one of `v1` / `v2` / `v3`.
-- `archives` -- map of archive name -> archive config. required.
-- `v2-archives` -- v1-only: map for pro/esm archives.
-- `public-keys` -- map of key id -> ascii-armored gpg block. required (referenced from each archive's `public-keys:`).
-- `maintenance` -- map of stage dates. `standard` + `end-of-life` required (v2+); `expanded` + `legacy` optional, lts-only.
-
-### archive entry subkeys
-
-- `version` -- ubuntu version, mirrors the branch suffix (e.g. `24.04`).
-- `components` -- list of apt components (`main`, `restricted`, `universe`, `multiverse`).
-- `suites` -- list of apt suites (`<codename>`, `<codename>-security`, `<codename>-updates`, `<codename>-backports`).
-- `public-keys` -- list of key ids referenced from the top-level `public-keys:` map.
-- `priority` -- int in `[-1000, 1000]` for multi-archive precedence. higher wins. v3 may omit it on the default archive.
-- `pro` -- one of `fips`, `fips-updates`, `esm-apps`, `esm-infra`. presence triggers ubuntu pro auth at runtime.
-
-### example (v1, ubuntu-24.04)
-
-```yaml
-format: v1
-
-maintenance:
-  standard: 2024-04-25
-  expanded: 2029-05-31
-  legacy: 2034-04-25
-  end-of-life: 2036-04-29
-
-archives:
-  ubuntu:
-    priority: 10
-    version: 24.04
-    components: [main, universe]
-    suites: [noble, noble-security, noble-updates]
-    public-keys: [ubuntu-archive-key-2018]
-
-v2-archives:
-  ubuntu-esm-apps:
-    pro: esm-apps
-    priority: 16
-    ...
-  ubuntu-esm-infra:
-    pro: esm-infra
-    priority: 15
-    ...
-
-public-keys:
-  ubuntu-archive-key-2018:
-    id: "871920D1991BC93C"
-    armor: |
-      -----BEGIN PGP PUBLIC KEY BLOCK-----
-      ...
-```
-
-key fields agents will hit:
-
-- `archives.ubuntu.suites[0]` -- short codename (e.g. `noble`). first token before `-` is the codename used to query `archive.ubuntu.com`.
-- `archives.ubuntu.components` -- which apt components are in scope.
-- `archives.ubuntu.version` -- ubuntu version, mirrors the branch suffix.
-- `maintenance.end-of-life` -- date; ci uses this to decide if a branch is still "live" (compared to `today`).
+- `format:` -- gates which sdf features are available.
+- `archives.ubuntu.suites[0]` -- short codename (e.g. `noble`). first token before `-` is the apt codename.
+- `archives.ubuntu.version` -- ubuntu version; mirrors branch suffix.
+- `maintenance.end-of-life` -- date. eol branches are read-only.
 
 ## slice definition files (sdfs)
 
@@ -282,42 +228,18 @@ regular `essential:` still takes a flat list of `<pkg>_<slice>` strings. only `v
 
 historical chisel bug: malformed entries in `essential:` (e.g. typoed slice id) used to be silently dropped. patched in upstream chisel; older chisel versions running against new releases may misbehave.
 
-## chisel cli (consumer side)
-
-agents may need to invoke the cli when testing slices. subcommands:
+## chisel cli (for testing your slices)
 
 - `chisel cut --release <ref> --root <dir> [--arch <a>] <pkg>_<slice> ...` -- materialise a sliced rootfs.
-- `chisel find <pattern>` -- search slices across the release.
+- `chisel find <pattern>` -- search slices in a release.
 - `chisel info <pkg>_<slice>` -- inspect a single slice.
-- `chisel version` -- print version.
-- `chisel help [cmd]` -- usage.
 
-`--release` resolution:
+`--release` accepts `ubuntu-XX.XX` (resolves to the branch online), an absolute path (local checkout), or omits to default to host's `/etc/os-release`.
 
-- omitted -> falls back to host's `/etc/os-release`.
-- `ubuntu-XX.XX` -> resolves to the matching git branch in this repo (online fetch).
-- absolute path -> treats it as a local chisel-release directory tree.
+## manifest, pro archives (when relevant)
 
-`--ignore` flag accepts e.g. `unstable`, `unmaintained` -- needed when a release branch is past eol but you want to operate on it anyway.
-
-## manifest
-
-chisel can emit a build manifest into the rootfs:
-
-- format: `jsonwall` -- newline-delimited json, zstd-compressed; one header object plus typed entries (packages, slices, paths, content mappings).
-- emitted by paths declared with `generate: manifest` in some slice's contents. by convention this is the `base-files_chisel` slice writing to `/var/lib/chisel/manifest.wall`.
-- example from `slices/base-files.yaml`: `/var/lib/chisel/**: {generate: manifest}`.
-- consumed by sbom generators, vulnerability scanners, the in-repo `coverage-report` ci script (which reads installed manifests via `zstdcat`), and the in-repo `forward-port-missing` ci script (no -- that one uses github api, not manifests; the manifest only flows through `coverage-report`).
-
-## ubuntu pro archives
-
-four valid `pro:` values for archive entries: `fips`, `fips-updates`, `esm-apps`, `esm-infra`. consumer-side requirements:
-
-- active ubuntu pro subscription.
-- pro client installed and the relevant service enabled (`sudo pro enable esm-infra` etc.).
-- chisel reads credentials from `/etc/apt/auth.conf.d/`; non-root invocations need read access (`setfacl -m u:$USER:r /etc/apt/auth.conf.d/90ubuntu-advantage`).
-
-most lts release branches (20.04, 22.04, 24.04) ship `v2-archives:` blocks for `ubuntu-esm-apps` + `ubuntu-esm-infra`. `ubuntu-26.04` does not yet (todo in the manifest).
+- **manifest** -- chisel can emit a build manifest at any path declared with `generate: manifest`. by convention `base-files_chisel` writes `/var/lib/chisel/manifest.wall` (jsonwall, zstd). agents only touch this when slicing `base-files`.
+- **pro slices** -- a slice ships from a pro archive iff its sdf has `archive: <name>` pointing at a `pro:`-tagged archive in `chisel.yaml` (`fips`, `fips-updates`, `esm-apps`, `esm-infra`). most lts branches have these archives wired up; `ubuntu-26.04` does not yet.
 
 ## the cardinal contribution rules
 
@@ -332,80 +254,20 @@ these are non-negotiable; ci and reviewers enforce them.
 7. **do not force-push after receiving review comments.** merge in target branch updates if needed.
 8. **cla required.** sign canonical contributor licence agreement before opening a pr.
 
-## ci workflows (lives under `.github/workflows/`)
+## ci checks an agent's pr will hit
 
-short summary -- enough for an agent to know what each fails for and where to look:
-
-| workflow | purpose | failure means |
-|---|---|---|
-| `lint.yaml` | yamllint on slice files across listed releases | yaml syntax / formatting issue in an sdf |
-| `install-slices.yaml` | actually `chisel cut` the changed slices and verify packages exist in the archive | slice cant be cut, or package not in archive for some arch |
-| `removed-slices.yaml` | flag deletions/renames of `slices/*.yaml` between base and head | sdf removed -- treated as breaking unless underlying package is gone (see #1000) |
-| `forward-port-missing.yaml` | label prs whose new slices are missing from newer live releases | a new slice exists in your branch but not in newer ones, and no pr proposes it |
-| `pkg-deps.yaml` | diff slice's declared deps vs `apt depends` for the upstream package, comment summary on pr | informational; non-blocking comment |
-| `validate-hints.yaml` | nlp check on hint text inside slice files | hint phrasing fails style check |
-| `check-releases-archives.yaml` | scheduled archive health check across release branches | upstream archive change broke a release |
-| `spread.yaml` | run integration tests under `tests/spread/integration/` | a slice's smoke test failed inside an lxd container |
-| `test-ci.yaml` | run pytest on the repo's own ci scripts | bug in `forward-port-missing` / `validate-hints` python |
-| `cla-check.yaml` | enforce cla signing | submitter hasnt signed cla |
-| `pr-comments.yaml` | post pr comments based on uploaded artifacts (e.g. coverage, pkg-deps) | n/a -- it's just the messenger |
-| `triage-prs.yaml` | scheduled label/triage automation | n/a |
-
-### bot accounts
-
-- **`github-actions[bot]`** posts pkg-deps diffs and coverage summaries on prs. reuses `mshick/add-pr-comment` with html-comment markers like `<!-- add-pr-comment:pkg-deps -->` to upsert its own comments instead of spamming.
-- **`Copilot`** auto-reviews are noisy: regularly suggests rejected formatting (e.g. inner spaces in arch lists, `: {}` on essentials). reviewers and contributors generally ignore the false-positives.
-
-### `pull_request_target` / fork-pr security
-
-`pkg-deps` runs under `pull_request_target` (needed to comment on fork prs). this repo has no secrets so the attack surface is small, but the spread workflow uses an artifact + separate trusted comment-poster split to avoid running fork code with elevated privileges. relevant context if extending any workflow that needs to comment back on a fork pr.
-
-scripts feeding these workflows live in `.github/scripts/`:
-
-- `forward-port-missing/forward_port_missing.py` -- python; queries github api for prs, fetches `Packages.gz` from `archive.ubuntu.com`, decides which prs need the `forward port missing` label.
-- `removed-slices/removed-slices` -- bash + yq; flags slice file deletions.
-- `install-slices/install_slices.py` -- python; orchestrates `chisel cut` runs; uses `rmadison` to check archive existence.
-- `pkg-deps/pkg-deps` -- bash + docker; diffs declared deps vs `apt depends`.
-- `validate-hints/validate_hints.py` -- python + spacy.
-- `test-coverage/coverage-report` + `coverage-to-md` -- bash + jq.
-
-note: there is an open refactor track to unify these scripts (see `.github/scripts/REFACTOR.md` if present).
-
-## archive lookup conventions
-
-agents debugging "does package X exist in release Y?" should know:
-
-- **http scrape (no deps)**: `https://archive.ubuntu.com/ubuntu/dists/<codename>{,-security,-updates,-backports}/<component>/binary-amd64/Packages.gz`. components are `main`, `restricted`, `universe`, `multiverse`. union them all to get the full set of packages in a release. regex `^Package:\s*(\S+)` extracts names.
-- **`rmadison <pkg>`** (devscripts) -- queries launchpad. lower volume, per-pkg.
-- which to use is convention drift; the http scrape is the more portable choice and what fp-missing uses.
-
-## labels
-
-repo-level labels and what they mean (from `gh api repos/.../labels`):
-
-| label | meaning |
+| check | failure means |
 |---|---|
-| `Blocked` | waiting for something external (closest thing to "do not merge") |
-| `bug` | something isn't working |
-| `decaying` | stale; close or act on it |
-| `documentation` | docs change |
-| `duplicate` | already exists |
-| `enhancement` | new feature/request |
-| `forward port missing` | auto-applied by ci when newer release lacks the port |
-| `good first issue` | newcomer-friendly |
-| `help wanted` | extra attention needed |
-| `invalid` | doesn't seem right |
-| `Priority` | look at me first |
-| `question` | needs more info |
-| `ready to merge` | terminal label, used for triage |
-| `wontfix` | will not be worked on |
+| `lint` | yaml syntax / formatting issue in an sdf |
+| `install-slices` | slice can't be `chisel cut`, or package not in archive for some arch |
+| `removed-slices` | sdf deleted -- breaking unless underlying package is gone from archive |
+| `forward-port-missing` | new slice exists in your branch but not in newer live releases (auto-labels pr) |
+| `pkg-deps` | informational comment diffing declared deps vs `apt depends`; non-blocking |
+| `validate-hints` | `hint:` text fails nlp style check (v3+ only) |
+| `spread` | a slice's smoke test failed inside the lxd test container |
+| `cla-check` | cla unsigned |
 
-no explicit "do not merge" label exists; `Blocked` is the closest.
-
-## reviewers
-
-- review team: [`@canonical/slice-reviewers-guild`](https://github.com/orgs/canonical/teams/slice-reviewers-guild). public; ping when a pr has been waiting.
-- recurring approvers (as of writing): cjdcordeiro (de-facto lead), rebornplusplus, zhijie-yang, alesancor1, upils, lczyk, lengau, Meulengracht, linostar, clay-lake.
+heads-up: github copilot auto-reviews on prs and frequently proposes patterns reviewers reject (inner-spaced arch lists, `: {}` on essentials). don't follow its suggestions blindly.
 
 ## multiarch quirks an agent will hit
 
@@ -452,10 +314,8 @@ testing rules from review history:
 - **path sort matters**: lexicographic order in `contents:` blocks is enforced socially by reviewers. resort before pushing.
 - **`copyright` is mandatory for functional slices**: every functional slice must carry copyright (typically via the file-level `essential:` -> `<pkg>_copyright`).
 - **forward-port chain order**: oldest -> newest. e.g. land in `ubuntu-24.04`, then port to `25.10`, then `26.04`. cross-link the prs in descriptions. mark non-forward-port prs with `### Forward porting\nn/a` in the description.
-- **slice rename across releases** (e.g. `bins` -> `scripts` in `sensible-utils`/`ucf`) lands as a chain: breaking pr in oldest target, then trivial fastforward prs into newer branches with `n/a` forward-port marker. those fastforwards may merge with one approval.
-- **versioned soname packages** (e.g. `librocksdb9.11`) get deleted when upstream rolls to a new soname (`librocksdb10`). `removed-slices` ci should ignore the deletion if the old package is no longer in the archive (this is the open issue at [#1000](https://github.com/canonical/chisel-releases/issues/1000)).
-- **`Slice Reviewers Guild` team is the review channel.** ping `@canonical/slice-reviewers-guild` when a pr has stalled.
-- **don't trust copilot review suggestions blindly** -- it frequently proposes patterns that are explicitly rejected by maintainers (arch-list spacing, `: {}` essentials).
+- **slice rename across releases** (e.g. `bins` -> `scripts`) lands as a chain: breaking pr in oldest target, then fastforward prs into newer branches with `n/a` forward-port marker.
+- **versioned soname packages** (e.g. `librocksdb9.11`) get deleted when upstream rolls a new soname (`librocksdb10`). `removed-slices` ci ignores the deletion if the old package is no longer in the archive.
 
 ## quick repro commands
 
