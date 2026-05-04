@@ -1,6 +1,28 @@
 # `chisel-releases` -- agent orientation
 
-self-contained briefing for an agent dropped into this repo. covers what chisel is, what this repo is, how it's organised, the rules a contribution must follow, and the conventions that ci enforces. portable -- copy this file into another context to bring an agent up to speed in one read.
+briefing for an agent that will create prs against the
+[`canonical/chisel-releases`](https://github.com/canonical/chisel-releases)
+repo. captures what's not in `README.md` / `CONTRIBUTING.md`: tribal
+review conventions, schema gotchas across format versions, and patterns
+that get prs rejected.
+
+assumed access:
+
+- this file may live anywhere on disk -- do not assume it's inside the
+  chisel-releases checkout.
+- you can read the repo via `gh` / clone / fetch any release branch.
+  authoritative content lives in the branches; this doc only summarises.
+- when this doc and the repo disagree, trust the repo.
+
+what to read in the repo (rather than re-read here):
+
+- per-release `chisel.yaml` -- the release manifest (schema features
+  available, eol, archives, codename).
+- per-release `slices/*.yaml` -- canonical examples of well-formed sdfs;
+  `slices/base-files.yaml` and `slices/bash.yaml` are good references.
+- repo-level `CONTRIBUTING.md` (on `main`) -- the canonical statement of
+  the contribution rules. summarised below; defer to it on conflict.
+- repo-level `README.md` (on `main`) -- list of supported releases.
 
 ## what chisel is
 
@@ -14,54 +36,21 @@ key facts about chisel itself (the tool) -- relevant context, not edited from th
 - docs: <https://documentation.ubuntu.com/chisel/en/latest/>.
 - source: <https://github.com/canonical/chisel>.
 
-## what `chisel-releases` is
+## branch model
 
-this repo is the official store of slice definitions consumed by chisel. each ubuntu release is a separate git _branch_, not a directory:
+one git branch per ubuntu release: `ubuntu-XX.XX` (e.g. `ubuntu-22.04`, `ubuntu-24.04`, `ubuntu-25.10`, `ubuntu-26.04`). `main` is meta-only -- ci, workflows, contributing docs; **no `slices/` or `chisel.yaml` on `main`**. all slice work targets a release branch.
 
-- `ubuntu-20.04` (focal, eol)
-- `ubuntu-22.04` (jammy)
-- `ubuntu-22.10`, `ubuntu-23.04`, `ubuntu-23.10` (eol)
-- `ubuntu-24.04` (noble) -- the lts most active right now
-- `ubuntu-24.10` (oracular, eol)
-- `ubuntu-25.04` (plucky, eol)
-- `ubuntu-25.10` (questing)
-- `ubuntu-26.04` (resolute) -- next lts in development
+active branches grow over time -- ubuntu-24.04 has ~600 sdfs, ubuntu-26.04 ~650. eol branches are frozen.
 
-`main` is meta-only: ci scripts, contributing docs, workflow definitions. **`main` does not contain `slices/` or `chisel.yaml`**. all slice work happens on `ubuntu-XX.XX` branches.
+per-release branch root:
 
-### slice counts per release (rough size signal)
+- `chisel.yaml` -- release manifest.
+- `slices/<pkg>.yaml` -- one per debian source package.
+- `spread.yaml` + `tests/spread/integration/<pkg>/{task.yaml,smoke.sh}` -- integration tests.
+- `tests/spread/lib/` -- shared spread helpers.
+- `.github/` -- workflows + ci scripts (synced from `main`).
 
-snapshot of `slices/*.yaml` count on `canonical/ubuntu-XX.XX`:
-
-| release | slice files |
-|---|---|
-| ubuntu-20.04 | 98 |
-| ubuntu-22.04 | 207 |
-| ubuntu-24.04 | 603 |
-| ubuntu-25.10 | 635 |
-| ubuntu-26.04 | 651 |
-
-each successor lts roughly triples-then-grows; the active surface for new contributions is `ubuntu-24.04` and newer.
-
-## per-release branch layout
-
-on every `ubuntu-XX.XX` branch:
-
-```
-chisel.yaml                  # release manifest: archives, suites, components, eol, signing keys
-slices/                      # one yaml per package -- the slice definition files (sdfs)
-    apparmor.yaml
-    base-files.yaml
-    bash.yaml
-    ...                      # ~600+ files on ubuntu-24.04
-spread.yaml                  # spread test runner config (lxd backend)
-tests/spread/integration/    # one dir per package with `task.yaml` + `smoke.sh` style tests
-tests/spread/lib/            # shared helpers (e.g. `install-slices` wrapper)
-.github/                     # workflows + scripts (synced from main)
-README.md, CONTRIBUTING.md
-```
-
-`main` only carries `.github/`, `README.md`, `CONTRIBUTING.md`. when working in this repo, **always check which branch you're on first** -- a checkout of `main` will have no slices.
+for the current set of live (non-eol) releases consult the repo's `README.md` -- it's kept up to date.
 
 ## `chisel.yaml` (release manifest)
 
@@ -129,42 +118,9 @@ within `slices.<name>.contents.<path>`:
 - typical use: merge `passwd`/`group` files (`base-passwd`), filter ca certificates (`ca-certificates`), splice apt sources, etc.
 - `until: mutate` is the partner mechanism: a file marked `until: mutate` is available for the script to read, then chisel deletes it from the rootfs once mutation finishes -- so build-time inputs do not pollute the final image.
 
-### canonical example
+### canonical examples (read from the repo)
 
-```yaml
-package: base-files                 # debian source package name; must match filename stem
-
-# essentials applied to *every* slice in this file:
-essential:
-  - base-files_copyright
-
-slices:
-  base:                             # slice name -- referenced as `base-files_base`
-    essential:                      # other slices this one depends on (cross-package ok)
-      - base-files_bin
-      - base-files_etc
-
-  bin:
-    contents:                       # paths extracted from the deb
-      /bin:
-      /sbin:
-      /usr/bin/:                    # trailing slash -> directory
-      /usr/sbin/:
-
-  lib:
-    contents:
-      /lib:
-      /lib64: {arch: [amd64, ppc64el]}    # arch-specific entries
-      /usr/lib/:
-
-  var:
-    contents:
-      /var/run/: {symlink: /run}    # explicit symlink target
-
-  copyright:
-    contents:
-      /usr/share/doc/base-files/copyright:
-```
+`slices/base-files.yaml` and `slices/bash.yaml` on any live release branch are well-formed reference sdfs covering most schema features. read them rather than rely on a snapshot here.
 
 ### addressing & conventions
 
@@ -241,18 +197,19 @@ historical chisel bug: malformed entries in `essential:` (e.g. typoed slice id) 
 - **manifest** -- chisel can emit a build manifest at any path declared with `generate: manifest`. by convention `base-files_chisel` writes `/var/lib/chisel/manifest.wall` (jsonwall, zstd). agents only touch this when slicing `base-files`.
 - **pro slices** -- a slice ships from a pro archive iff its sdf has `archive: <name>` pointing at a `pro:`-tagged archive in `chisel.yaml` (`fips`, `fips-updates`, `esm-apps`, `esm-infra`). most lts branches have these archives wired up; `ubuntu-26.04` does not yet.
 
-## the cardinal contribution rules
+## contribution rules (summary -- defer to repo `CONTRIBUTING.md`)
 
-these are non-negotiable; ci and reviewers enforce them.
+read [`CONTRIBUTING.md` on `main`](https://github.com/canonical/chisel-releases/blob/main/CONTRIBUTING.md) for the canonical statement. agent-relevant points it covers:
 
-1. **branch off the target release branch, not `main`.** prs into `main` are wrong. target `ubuntu-XX.XX`. mentioned explicitly in `CONTRIBUTING.md`.
-2. **forward-port to every newer live release.** if you change `ubuntu-22.04`, you must also open a pr (or pr chain) into `ubuntu-24.04`, `ubuntu-25.10`, `ubuntu-26.04` -- every live (non-eol) release newer than the target. ci has `forward-port-missing` workflow that auto-labels prs missing this. exception: the slice's package no longer exists in the newer release's archive (then the missing port is intentional and is auto-ignored).
-3. **conventional commits.** prefixes: `feat:`, `fix:`, `test:`, `ci:`, `chore:`, `docs:`, `refactor:`. scope optional in parens. examples in `CONTRIBUTING.md`. subject lowercase, no trailing period, imperative mood, <=50 chars; body wrapped at 72.
-4. **two maintainer approvals required to merge** -- with one practical exception: trivial forward-port pr's into devel branches (pure cherry-picks of already-approved breaking changes) sometimes land on a single approval. don't rely on it for substantive prs.
-5. **green ci required.** maintainers wont review until checks are green.
-6. **be holistic, not piecemeal.** one pr should be one cohesive contribution. multiple uncorrelated slice changes -> separate prs.
-7. **do not force-push after receiving review comments.** merge in target branch updates if needed.
-8. **cla required.** sign canonical contributor licence agreement before opening a pr.
+- **branch off the target release branch, not `main`.** prs into `main` are wrong.
+- **conventional commits** for subject prefixes (`feat:`, `fix:`, `test:`, `ci:`, `chore:`, `docs:`, `refactor:`); subject lowercase, imperative, <=50 chars, no trailing period; body wrapped at 72.
+- **two maintainer approvals to merge**; cla signed; green ci before review; no force-push after review comments; one cohesive change per pr.
+
+extras that are NOT in `CONTRIBUTING.md` but matter:
+
+- **forward-port to every newer live release.** open a pr chain (oldest -> newest). ci's `forward-port-missing` workflow auto-labels prs missing this. exception: the slice's package no longer exists in the newer release's archive -- then the missing port is intentional and auto-ignored.
+- **two-approval rule has a practical exception**: trivial forward-port prs (pure cherry-picks of already-approved breaking changes) sometimes land on one approval. don't rely on it for substantive work.
+- mark non-forward-port prs with `### Forward porting\nn/a` in the description body.
 
 ## ci checks an agent's pr will hit
 
@@ -313,64 +270,57 @@ testing rules from review history:
 - **starlark, not python**: mutate scripts use starlark. no imports, no exceptions, restricted stdlib. only `content.list/read/write` for fs interaction.
 - **path sort matters**: lexicographic order in `contents:` blocks is enforced socially by reviewers. resort before pushing.
 - **`copyright` is mandatory for functional slices**: every functional slice must carry copyright (typically via the file-level `essential:` -> `<pkg>_copyright`).
-- **forward-port chain order**: oldest -> newest. e.g. land in `ubuntu-24.04`, then port to `25.10`, then `26.04`. cross-link the prs in descriptions. mark non-forward-port prs with `### Forward porting\nn/a` in the description.
+- **forward-port chain order**: oldest -> newest. cross-link the prs in descriptions.
 - **slice rename across releases** (e.g. `bins` -> `scripts`) lands as a chain: breaking pr in oldest target, then fastforward prs into newer branches with `n/a` forward-port marker.
 - **versioned soname packages** (e.g. `librocksdb9.11`) get deleted when upstream rolls a new soname (`librocksdb10`). `removed-slices` ci ignores the deletion if the old package is no longer in the archive.
 
-## quick repro commands
+## inspecting the repo without a full checkout
 
-investigate from a fresh checkout:
+via `gh` or git fetch, common operations (no assumption about cwd):
 
 ```bash
-# see live releases
-git branch -r | grep ubuntu-
+# list live release branches
+gh api repos/canonical/chisel-releases/branches --paginate \
+  --jq '.[] | select(.name | test("^ubuntu-")) | .name'
 
-# inspect a release manifest
-git show ubuntu-24.04:chisel.yaml | head -30
+# read a release manifest
+gh api repos/canonical/chisel-releases/contents/chisel.yaml?ref=ubuntu-24.04 \
+  --jq '.content' | base64 -d
 
-# list slices in a release
-git ls-tree --name-only ubuntu-24.04 slices/ | head
+# read a single sdf
+gh api repos/canonical/chisel-releases/contents/slices/bash.yaml?ref=ubuntu-24.04 \
+  --jq '.content' | base64 -d
 
-# see the schema by example
-git show ubuntu-24.04:slices/bash.yaml
-
-# diff a single slice between two releases
-git diff ubuntu-22.04:slices/coreutils.yaml ubuntu-24.04:slices/coreutils.yaml
+# diff a slice between releases (needs a clone or sparse fetch)
+git -C <chisel-releases-repo> diff ubuntu-22.04:slices/coreutils.yaml ubuntu-24.04:slices/coreutils.yaml
 ```
 
-write a contribution:
+contribution flow (run inside a chisel-releases checkout, wherever it lives):
 
 ```bash
-# branch off the target release
-git fetch origin ubuntu-24.04
-git checkout -b add-mypkg-slices ubuntu-24.04
-
-# add slices/mypkg.yaml ...
-
-# commit conventional
-git commit -m "feat(mypkg): add core, bins, libs, copyright slices"
-
-# open pr against ubuntu-24.04, then forward-port:
-git checkout -b add-mypkg-slices-2510 ubuntu-25.10
-git cherry-pick <commit-sha>
-# resolve any drift, open pr against ubuntu-25.10, repeat for 26.04
+git -C <repo> fetch origin ubuntu-24.04
+git -C <repo> checkout -b add-mypkg-slices ubuntu-24.04
+# add slices/mypkg.yaml + tests/spread/integration/mypkg/{task.yaml,smoke.sh}
+git -C <repo> commit -m "feat(mypkg): add core, bins, libs, copyright slices"
+# open pr against ubuntu-24.04, then chain forward-ports through 25.10 -> 26.04
 ```
 
 ## external references
 
-- chisel tool: <https://github.com/canonical/chisel>
-- chisel docs (entry): <https://documentation.ubuntu.com/chisel/latest/>
-- how-to slice a package: <https://documentation.ubuntu.com/chisel/latest/how-to/slice-a-package/>
-- sdf reference: <https://documentation.ubuntu.com/chisel/latest/reference/chisel-releases/slice-definitions/>
-- chisel.yaml reference: <https://documentation.ubuntu.com/chisel/latest/reference/chisel-releases/chisel.yaml/>
-- manifest reference: <https://documentation.ubuntu.com/chisel/latest/reference/manifest/>
-- cut cli reference: <https://documentation.ubuntu.com/chisel/latest/reference/cmd/cut/>
-- pro slices how-to: <https://documentation.ubuntu.com/chisel/latest/how-to/install-pro-package-slices/>
-- this repo: <https://github.com/canonical/chisel-releases>
-- contributing: `./CONTRIBUTING.md`
-- navigator (live slice browser): <https://canonical.github.io/chisel-releases-navigator/>
-- ubuntu release schedule (for codenames + eol): <https://wiki.ubuntu.com/Releases>
+- chisel source: <https://github.com/canonical/chisel>
+- chisel docs: <https://documentation.ubuntu.com/chisel/latest/>
+  - how-to: slice a package -- <https://documentation.ubuntu.com/chisel/latest/how-to/slice-a-package/>
+  - sdf reference -- <https://documentation.ubuntu.com/chisel/latest/reference/chisel-releases/slice-definitions/>
+  - chisel.yaml reference -- <https://documentation.ubuntu.com/chisel/latest/reference/chisel-releases/chisel.yaml/>
+  - manifest reference -- <https://documentation.ubuntu.com/chisel/latest/reference/manifest/>
+  - cut cli reference -- <https://documentation.ubuntu.com/chisel/latest/reference/cmd/cut/>
+  - pro slices how-to -- <https://documentation.ubuntu.com/chisel/latest/how-to/install-pro-package-slices/>
+- chisel-releases repo: <https://github.com/canonical/chisel-releases>
+  - `CONTRIBUTING.md` (authoritative): <https://github.com/canonical/chisel-releases/blob/main/CONTRIBUTING.md>
+  - `README.md` (live release list): <https://github.com/canonical/chisel-releases/blob/main/README.md>
+- chisel releases navigator (browse slices interactively): <https://canonical.github.io/chisel-releases-navigator/>
+- ubuntu release schedule (codenames + eol): <https://wiki.ubuntu.com/Releases>
 
 ---
 
-agents reading this: you have what you need to navigate this repo, understand contributions, and reason about ci failures. when in doubt, the relevant `ubuntu-XX.XX` branch's `chisel.yaml` and an existing well-formed sdf (`slices/bash.yaml`, `slices/base-files.yaml`) are reliable references.
+when this doc disagrees with the repo, trust the repo. when in doubt, read `slices/bash.yaml` or `slices/base-files.yaml` on the target release branch as a reference sdf.
