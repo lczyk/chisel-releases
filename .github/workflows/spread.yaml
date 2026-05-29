@@ -83,7 +83,7 @@ jobs:
         if: ${{ steps.spread-suites.outputs.run-tasks }}
         run: |
           (cd _spread/cmd/spread && go build)
-          _spread/cmd/spread/spread -v ${{ steps.spread-suites.outputs.run-tasks }}
+          _spread/cmd/spread/spread -vv ${{ steps.spread-suites.outputs.run-tasks }}
 
       # Test coverage report
       # Note that these steps depend on the success of the spread tests. This is
