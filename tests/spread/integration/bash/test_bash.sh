@@ -1,5 +1,8 @@
 rootfs="$(install-slices bash_bins)"
 
+
+# hello 
+
 chroot "$rootfs" bash -c "echo Success > /test"
 
 test "$(cat "$rootfs/test")" == "Success"
