@@ -23,7 +23,7 @@ slices:
       /usr/sbin/unix_update:
 
   unix-chkpwd:
-    hint: Password check helper for PAM
+    hint: Password verification helper for PAM
     essential:
       libaudit1_libs:
       libc6_libs:
