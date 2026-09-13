@@ -71,12 +71,12 @@ slices:
       libsystemd-shared_libs:
       systemd_journal:
       systemd_minimal:
+      systemd_sysusers:
       systemd_sysusers-config:
+      systemd_tmpfiles:
       systemd_tmpfiles-config:
     contents:
       /usr/bin/systemd-notify:
-      /usr/bin/systemd-sysusers:
-      /usr/bin/systemd-tmpfiles:
       /usr/lib/systemd/system/network-online.target:
       /usr/lib/systemd/system/network-pre.target:
       /usr/lib/systemd/system/network.target:
@@ -186,6 +186,26 @@ slices:
       libsystemd-shared_libs:
     contents:
       /usr/bin/systemd-detect-virt:
+
+  # Standalone: applies sysusers.d fragments to a root of its choice, running
+  # system or not, which is how an image build uses it.
+  sysusers:
+    hint: Create system users and groups
+    essential:
+      libc6_libs:
+      libsystemd-shared_libs:
+    contents:
+      /usr/bin/systemd-sysusers:
+
+  # Standalone: applies tmpfiles.d fragments to a root of its choice, running
+  # system or not, which is how an image build uses it.
+  tmpfiles:
+    hint: Create and clean up volatile files
+    essential:
+      libc6_libs:
+      libsystemd-shared_libs:
+    contents:
+      /usr/bin/systemd-tmpfiles:
 
   journal:
     hint: View and manage system logs
