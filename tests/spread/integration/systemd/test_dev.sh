@@ -32,10 +32,12 @@ nsrun systemd-cgls --no-pager | grep -Fq "systemd-journald"
 nsrun systemd-cgtop -n2 -d 0.5 -b | grep -Fq "system.slice"
 nsrun systemd-id128 boot-id | grep -Eq "^[0-9a-f]{32}$"
 test "$(nsrun systemd-machine-id-setup --print)" = "$(nsrun systemd-id128 machine-id)"
-nsrun systemd-delta --no-pager | grep -Fq "ctrl-alt-del.target"
+nsrun systemd-delta --no-pager --diff=no | grep -Fq "ctrl-alt-del.target"
 nsrun systemd-mount --list --no-pager | grep -Fq "NODE"
 nsrun systemd-sysext list 2>&1 | grep -Fq "No OS extensions"
-echo secret | nsrun systemd-creds encrypt --name=chisel-test - - | nsrun systemd-creds decrypt --name=chisel-test - - \
+# spread keeps the rootfs on a tmpfs, where systemd will not keep a host key
+echo secret | nsrun systemd-creds encrypt --with-key=null --name=chisel-test - - \
+  | nsrun systemd-creds decrypt --with-key=null --allow-null --name=chisel-test - - \
   | grep -Fxq "secret"
 nsystemctl start systemd-logind.service
 # hold a lock and list the locks from inside it

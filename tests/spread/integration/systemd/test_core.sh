@@ -49,7 +49,8 @@ for unit in systemd-journald.service systemd-journald.socket systemd-journald-de
   nsystemctl is-active "$unit"
 done
 nsrun journalctl --no-pager -b | grep -Fq "Journal started"
-nsrun journalctl --no-pager -b -u systemd-sysusers.service | grep -Fq "Creating group"
+# a short-lived unit can lose its unit field in the journal; its identifier stays
+nsrun journalctl --no-pager -b -t systemd-sysusers | grep -Fq "Creating group"
 
 # a unit that reports readiness from a script rather than a compiled binary,
 # ordered against the targets other packages name

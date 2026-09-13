@@ -58,6 +58,8 @@ nsrun timedatectl --no-pager | grep -Fq "Local time"
 nsrun networkctl list --no-pager | grep -Fq "lo "
 
 # run0 elevates through PAM and the manager
-test "$(nsrun run0 --no-ask-password systemd-detect-virt --container)" != "none"
+expected="$(nsrun systemd-detect-virt --container || true)"
+test -n "$expected"
+test "$(nsrun run0 --no-ask-password systemd-detect-virt --container)" = "$expected"
 
 shutdown_rootfs

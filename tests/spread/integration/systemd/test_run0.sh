@@ -21,8 +21,11 @@ boot_rootfs "$rootfs"
 # shellcheck disable=SC2119 # nothing is expected to fail here
 assert_failed_units
 
-test "$(nsrun systemd-run --wait --collect --pipe --quiet systemd-detect-virt --container)" != "none"
-test "$(nsrun run0 --no-ask-password systemd-detect-virt --container)" != "none"
-test "$(nsrun run0 --no-ask-password --user=root systemd-detect-virt --container)" != "none"
+# the command's output has to come back through them, not just an exit code
+expected="$(nsrun systemctl show -p Version --value)"
+test -n "$expected"
+test "$(nsrun systemd-run --wait --collect --pipe --quiet systemctl show -p Version --value)" = "$expected"
+test "$(nsrun run0 --no-ask-password systemctl show -p Version --value)" = "$expected"
+test "$(nsrun run0 --no-ask-password --user=root systemctl show -p Version --value)" = "$expected"
 
 shutdown_rootfs
