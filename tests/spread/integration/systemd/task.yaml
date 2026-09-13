@@ -9,6 +9,7 @@ variants:
     - detect-virt
     - sysusers
     - tmpfiles
+    - firstboot
     - run0
     - journal
     - login

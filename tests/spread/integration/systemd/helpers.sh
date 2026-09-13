@@ -1,5 +1,5 @@
 #!/bin/bash
-#spellchecker: ignore rootfs nsenter nsrun nsystemctl getty firstboot
+#spellchecker: ignore rootfs nsenter nsrun nsystemctl getty
 
 # Boots a chiselled rootfs with systemd as PID 1 of a nested pid+mount
 # namespace, so the slice under test is what PID 1 sees and nothing else.
@@ -20,11 +20,9 @@ boot_rootfs() {
   # container's own device nodes
   mount --make-rprivate "$rootfs"
 
-  # no tty in here; the runtime masks stay out of the cut
+  # no tty in here; the runtime mask stays out of the cut
   mkdir -p "$rootfs/run/systemd/system"
-  for unit in console-getty.service systemd-firstboot.service; do
-    ln -s /dev/null "$rootfs/run/systemd/system/$unit"
-  done
+  ln -s /dev/null "$rootfs/run/systemd/system/console-getty.service"
 
   # systemd mounts /sys and the cgroup tree itself; /proc has to be the one
   # of the new pid namespace, so unshare mounts it rather than us.
