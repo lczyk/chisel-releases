@@ -9,8 +9,8 @@ boot_rootfs() {
   local rootfs="$1"
 
   mkdir -p "$rootfs"/{proc,sys,dev,run,tmp}
-  # generators run in a sandbox that pivots into the root: it has to be a
-  # mount point
+  # generators pivot into the root and PID 1 gets moved onto /: it has to be
+  # a mount point
   mount --bind "$rootfs" "$rootfs"
   mount --make-private "$rootfs"
   mount -t tmpfs tmpfs "$rootfs/run"
@@ -26,8 +26,11 @@ boot_rootfs() {
 
   # systemd mounts /sys and the cgroup tree itself; /proc has to be the one
   # of the new pid namespace, so unshare mounts it rather than us.
+  # onto / rather than a chroot: setns() back into this namespace resets root
+  # to its /, and machine-id-commit reads the id back through that
   env -i container=lxc SYSTEMD_LOG_TARGET=console \
-    unshare --pid --fork --mount-proc="$rootfs/proc" chroot "$rootfs" /usr/lib/systemd/systemd &
+    unshare --pid --fork --mount-proc="$rootfs/proc" \
+    sh -c 'cd "$1" && mount --move . / && exec chroot . /usr/lib/systemd/systemd' sh "$rootfs" &
   unshare_pid=$!
 
   systemd_pid=""
