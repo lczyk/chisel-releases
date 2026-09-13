@@ -15,9 +15,10 @@ slices:
   minimal:
     hint: PID 1 service manager and boot units
     essential:
-      libapparmor1_libs:
       libc6_libs:
-      liblzma5_libs:
+      # PID 1 and the executor dlopen it to turn SystemCallFilter= and friends
+      # into seccomp filters; without it every unit silently runs unfiltered
+      libseccomp2_libs:
       libsystemd-shared_libs:
       mount_bins:
     contents:
@@ -92,9 +93,7 @@ slices:
   standard:
     hint: Core service manager and tools
     essential:
-      libapparmor1_libs:
       libc6_libs:
-      liblzma5_libs:
       libsystemd-shared_libs:
       mount_bins:
       systemd_catalog:
@@ -134,6 +133,9 @@ slices:
     hint: Additional systemd utilities
     essential:
       libc6_libs:
+      # systemd-creds dlopens libcrypto and can neither encrypt nor decrypt
+      # without it; the package accepts libssl3t64 | libssl4
+      libssl4_libs:
       libsystemd-shared_libs:
       systemd_standard:
     contents:
