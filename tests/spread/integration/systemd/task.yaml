@@ -7,6 +7,8 @@ variants:
     - standard-tools
     - dev
     - detect-virt
+    - sysusers
+    - tmpfiles
     - run0
     - journal
     - login
