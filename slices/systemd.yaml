@@ -15,16 +15,10 @@ slices:
   minimal:
     hint: PID 1 service manager and boot units
     essential:
-      libacl1_libs:
       libapparmor1_libs:
       libc6_libs:
       liblzma5_libs:
-      libmount1_libs:
-      libpam0g_libs:
-      libseccomp2_libs:
-      libselinux1_libs:
       libsystemd-shared_libs:
-      libsystemd0_libs:
       mount_bins:
     contents:
       /usr/bin/systemctl:
@@ -72,6 +66,8 @@ slices:
   core:
     hint: Journal, boot setup and notify
     essential:
+      libc6_libs:
+      libsystemd-shared_libs:
       systemd_journal:
       systemd_minimal:
       systemd_sysusers-config:
@@ -96,16 +92,10 @@ slices:
   standard:
     hint: Core service manager and tools
     essential:
-      libacl1_libs:
       libapparmor1_libs:
       libc6_libs:
       liblzma5_libs:
-      libmount1_libs:
-      libpam0g_libs:
-      libseccomp2_libs:
-      libselinux1_libs:
       libsystemd-shared_libs:
-      libsystemd0_libs:
       mount_bins:
       systemd_catalog:
       systemd_config:
@@ -198,7 +188,6 @@ slices:
     essential:
       libc6_libs:
       libsystemd-shared_libs:
-      libsystemd0_libs:
       systemd_config:
     contents:
       /usr/bin/journalctl:
@@ -230,9 +219,7 @@ slices:
     hint: Manage user logins and sessions
     essential:
       libc6_libs:
-      libpam0g_libs:
       libsystemd-shared_libs:
-      libsystemd0_libs:
       systemd_config:
       systemd_pam-profile:
       systemd_polkit:
@@ -299,8 +286,6 @@ slices:
     hint: Manage network configuration
     essential:
       libc6_libs:
-      # dlopened, and the package accepts libssl3t64 | libssl4
-      libssl4_libs:
       libsystemd-shared_libs:
       systemd_config:
       systemd_network-config:
@@ -433,6 +418,9 @@ slices:
 
   system-generators:
     hint: System unit generators
+    essential:
+      libc6_libs:
+      libsystemd-shared_libs:
     contents:
       /etc/systemd/system-generators/systemd-gpt-auto-generator:
       /usr/lib/systemd/system-generators/systemd-debug-generator:
@@ -450,6 +438,8 @@ slices:
     essential:
       # sysinit.target.wants/ldconfig.service runs it on every boot
       libc-bin_ldconfig:
+      libc6_libs:
+      libsystemd-shared_libs:
       systemd_generated-services:
     contents:
       # sysinit.target.wants/systemd-machine-id-commit.service runs it
@@ -671,6 +661,9 @@ slices:
 
   user-services:
     hint: User units and targets
+    essential:
+      libc6_libs:
+      libsystemd-shared_libs:
     contents:
       /usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator:
       /usr/lib/systemd/user-generators/systemd-xdg-autostart-generator:

@@ -10,7 +10,6 @@ slices:
       libaudit1_libs:
       libblkid1_libs:
       libc6_libs:
-      libcap2_libs:
       libcrypt1_libs:
       libmount1_libs:
       libpam0g_libs:
