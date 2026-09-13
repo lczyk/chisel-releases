@@ -166,7 +166,9 @@ slices:
     essential:
       libc6_libs:
       # the session is set up through PAM; the package ships no pam.d file
-      # of its own, so it is the "other" stack
+      # of its own, so it is the "other" stack, whose pam_unix account check
+      # runs the unix_chkpwd helper
+      libpam-modules-bin_unix-chkpwd:
       libpam-modules_libs:
       libpam-runtime_config:
       libsystemd-shared_libs:
