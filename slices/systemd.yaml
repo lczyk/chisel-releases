@@ -207,6 +207,18 @@ slices:
     contents:
       /usr/bin/systemd-tmpfiles:
 
+  # Opt-in: its unit prompts on the console at first boot for anything not
+  # handed to it as a credential, and stalls or fails a boot nobody answers.
+  firstboot:
+    hint: First boot system setup
+    essential:
+      libc6_libs:
+      libsystemd-shared_libs:
+    contents:
+      /usr/bin/systemd-firstboot:
+      /usr/lib/systemd/system/sysinit.target.wants/systemd-firstboot.service:
+      /usr/lib/systemd/system/systemd-firstboot.service:
+
   journal:
     hint: View and manage system logs
     essential:
@@ -589,7 +601,6 @@ slices:
       /usr/lib/systemd/system/sysinit.target.wants/sys-kernel-tracing.mount:
       /usr/lib/systemd/system/sysinit.target.wants/systemd-ask-password-console.path:
       /usr/lib/systemd/system/sysinit.target.wants/systemd-binfmt.service:
-      /usr/lib/systemd/system/sysinit.target.wants/systemd-firstboot.service:
       /usr/lib/systemd/system/sysinit.target.wants/systemd-hibernate-clear.service:
       /usr/lib/systemd/system/sysinit.target.wants/systemd-machine-id-commit.service:
       /usr/lib/systemd/system/sysinit.target.wants/systemd-random-seed.service:
@@ -628,7 +639,6 @@ slices:
       /usr/lib/systemd/system/systemd-factory-reset-request.service:
       /usr/lib/systemd/system/systemd-factory-reset.socket:
       /usr/lib/systemd/system/systemd-factory-reset@.service:
-      /usr/lib/systemd/system/systemd-firstboot.service:
       /usr/lib/systemd/system/systemd-fsck-root.service:
       /usr/lib/systemd/system/systemd-fsck-root.service.d/10-skip-fsck-initramfs.conf:
       /usr/lib/systemd/system/systemd-fsck@.service:
