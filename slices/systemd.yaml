@@ -443,6 +443,8 @@ slices:
       libc6_libs:
       libsystemd-shared_libs:
       systemd_generated-services:
+      # the getty units run agetty wherever their tty exists, and fail without it
+      util-linux_tty:
     contents:
       # sysinit.target.wants/systemd-machine-id-commit.service runs it
       /usr/bin/systemd-machine-id-setup:
